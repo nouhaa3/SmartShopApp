@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.smartshopapp.auth.AuthViewModel
 import com.example.smartshopapp.auth.LoginScreen
+import com.example.smartshopapp.auth.RegisterScreen
 import com.example.smartshopapp.ui.home.HomeScreen
 
 @SuppressLint("ViewModelConstructorInComposable")
@@ -23,11 +24,22 @@ fun AppNavigation() {
         composable("login") {
             LoginScreen(
                 viewModel = viewModel,
-                onLoginSuccess = { navController.navigate("home") }
+                onLoginSuccess = { navController.navigate("home") },
+                onRegisterClick = { navController.navigate("register") }
             )
         }
+
+        composable("register") {
+            RegisterScreen(
+                viewModel = viewModel,
+                onRegisterSuccess = { navController.navigate("home") },
+                onLoginClick = { navController.navigate("login") }
+            )
+        }
+
         composable("home") {
             HomeScreen()
         }
     }
+
 }

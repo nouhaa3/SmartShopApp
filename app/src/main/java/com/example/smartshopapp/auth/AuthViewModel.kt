@@ -1,38 +1,45 @@
 package com.example.smartshopapp.auth
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+data class AuthUiState(
+    val loading: Boolean = false,
+    val error: String? = null
+)
+
 class AuthViewModel : ViewModel() {
 
-    private val auth = FirebaseAuth.getInstance()
+    private val _uiState = MutableStateFlow(AuthUiState())
+    val uiState: StateFlow<AuthUiState> = _uiState
 
-    private val _loginState = MutableStateFlow<AuthResult>(AuthResult.Idle)
-    val loginState: StateFlow<AuthResult> = _loginState
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    fun login(email: String, password: String) {
-        viewModelScope.launch {
-            try {
-                _loginState.value = AuthResult.Loading
+    fun login(email: String, password: String, onSuccess: () -> Unit) {
+        _uiState.value = AuthUiState(loading = true)
 
-                auth.signInWithEmailAndPassword(email, password).await()
-
-                _loginState.value = AuthResult.Success
-            } catch (e: Exception) {
-                _loginState.value = AuthResult.Error(e.message ?: "Login failed")
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnSuccessListener {
+                _uiState.value = AuthUiState(loading = false)
+                onSuccess()
             }
-        }
+            .addOnFailureListener { e ->
+                _uiState.value = AuthUiState(loading = false, error = e.message)
+            }
     }
-}
 
-sealed class AuthResult {
-    object Idle : AuthResult()
-    object Loading : AuthResult()
-    object Success : AuthResult()
-    data class Error(val message: String) : AuthResult()
+    fun register(email: String, password: String, onSuccess: () -> Unit) {
+        _uiState.value = AuthUiState(loading = true)
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnSuccessListener {
+                _uiState.value = AuthUiState(loading = false)
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                _uiState.value = AuthUiState(loading = false, error = e.message)
+            }
+    }
 }
