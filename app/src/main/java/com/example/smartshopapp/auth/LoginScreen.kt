@@ -4,28 +4,35 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onRegisterClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val loginState by viewModel.loginState.collectAsState()
+    val uiState = viewModel.uiState.collectAsState().value
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp),
+            .padding(25.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "SmartShop Login", style = MaterialTheme.typography.headlineSmall)
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = "Welcome Back",
+            style = MaterialTheme.typography.headlineMedium
+        )
 
+        Spacer(Modifier.height(20.dp))
+
+        // email input
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -33,8 +40,9 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(Modifier.height(10.dp))
 
+        // password input
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -42,25 +50,42 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(Modifier.height(20.dp))
 
         Button(
             onClick = { viewModel.login(email, password) },
+            enabled = !uiState.loading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Login")
+            if (uiState.loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Login")
+            }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        when (loginState) {
-            is AuthResult.Loading -> CircularProgressIndicator()
-            is AuthResult.Error -> Text(
-                text = (loginState as AuthResult.Error).message,
-                color = MaterialTheme.colorScheme.error
+        if (uiState.error != null) {
+            Text(
+                text = uiState.error ?: "",
+                color = Color.Red,
+                modifier = Modifier.padding(top = 10.dp)
             )
-            AuthResult.Success -> onLoginSuccess()
-            else -> {}
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        TextButton(onClick = onRegisterClick) {
+            Text("Don't have an account? Register")
+        }
+
+        if (uiState.success) {
+            LaunchedEffect(Unit) {
+                viewModel.reset()
+                onLoginSuccess()
+            }
         }
     }
 }

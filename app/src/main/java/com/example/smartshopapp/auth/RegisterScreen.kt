@@ -4,17 +4,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel,
     onRegisterSuccess: () -> Unit,
     onLoginClick: () -> Unit
 ) {
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -26,10 +24,14 @@ fun RegisterScreen(
             .padding(25.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Create Account", style = MaterialTheme.typography.headlineMedium)
+        Text(
+            text = "Create Account",
+            style = MaterialTheme.typography.headlineMedium
+        )
 
         Spacer(Modifier.height(20.dp))
 
+        // email
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -37,33 +39,53 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(10.dp))
 
+        // password
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(Modifier.height(20.dp))
 
         Button(
-            onClick = { viewModel.register(email, password, onRegisterSuccess) },
+            onClick = { viewModel.register(email, password) },
+            enabled = !uiState.loading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Create account")
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        TextButton(onClick = { onLoginClick() }) {
-            Text("Already have an account? Login")
+            if (uiState.loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Register")
+            }
         }
 
         if (uiState.error != null) {
-            Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
+            Text(
+                text = uiState.error ?: "",
+                color = Color.Red,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        TextButton(onClick = onLoginClick) {
+            Text("Already have an account? Login")
+        }
+
+        // Handle success
+        if (uiState.success) {
+            LaunchedEffect(Unit) {
+                viewModel.reset()
+                onRegisterSuccess()
+            }
         }
     }
 }

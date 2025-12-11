@@ -5,12 +5,10 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-
 android {
     namespace = "com.example.smartshopapp"
-    compileSdk {
-        version = release(36)
-    }
+
+    compileSdk = 36   // Use 34 (stable). Remove "release(36)" to avoid errors.
 
     defaultConfig {
         applicationId = "com.example.smartshopapp"
@@ -31,22 +29,33 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
     }
 }
 
 dependencies {
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
 
-    implementation(libs.androidx.core.ktx)
+    // Firebase BOM (controls all versions)
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+
+    // Firebase services (NO VERSIONS HERE)
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // --- Compose + AndroidX ---
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -57,12 +66,7 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-storage")
-    implementation(libs.firebase.common.ktx)
-
+    // --- Tests ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
