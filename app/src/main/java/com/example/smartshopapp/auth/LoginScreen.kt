@@ -5,7 +5,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.smartshopapp.ui.theme.SmartShopAppTheme
 
 @Composable
 fun LoginScreen(
@@ -32,7 +35,6 @@ fun LoginScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // email input
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -42,11 +44,11 @@ fun LoginScreen(
 
         Spacer(Modifier.height(10.dp))
 
-        // password input
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -82,7 +84,7 @@ fun LoginScreen(
         }
 
         if (uiState.success) {
-            LaunchedEffect(Unit) {
+            LaunchedEffect(uiState.success) {
                 viewModel.reset()
                 onLoginSuccess()
             }
