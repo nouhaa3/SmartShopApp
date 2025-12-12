@@ -7,108 +7,66 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.smartshopapp.domain.ProductViewModel
+import com.example.smartshopapp.data.remote.ProductRepository
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
-    viewModel: ProductViewModel
+    repository: ProductRepository
 ) {
-    val state = viewModel.uiState.collectAsState().value
+    val scope = rememberCoroutineScope()
 
-    val totalProducts = state.products.size
-    val totalValue = state.products.sumOf { it.quantity * it.price }
+    // Observed states
+    var totalProducts by remember { mutableStateOf(0) }
+    var totalStock by remember { mutableStateOf(0) }
+    var avgPrice by remember { mutableStateOf(0.0) }
+    var maxPriceProduct by remember { mutableStateOf<String?>(null) }
+
+    var chartData by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
+
+    // Load statistics once
+    LaunchedEffect(Unit) {
+        val products = repository.getAllProductsOnce()
+
+        totalProducts = products.size
+        totalStock = products.sumOf { it.quantity }
+        avgPrice = if (products.isNotEmpty()) products.map { it.price }.average() else 0.0
+        maxPriceProduct = products.maxByOrNull { it.price }?.name
+
+        // map for bar chart: product name → stock quantity
+        chartData = products.map { it.name to it.quantity }
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Statistics") }
-            )
+            TopAppBar(title = { Text("Statistics") })
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(20.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(16.dp)
         ) {
 
-            // -------------------------
-            // CARDS
-            // -------------------------
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFEEF7FF))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Total Products", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "$totalProducts",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+            // ---------- STATS CARDS ----------
+            StatCard("Total Products", totalProducts.toString())
+            StatCard("Total Stock", totalStock.toString())
+            StatCard("Average Price", String.format("%.2f", avgPrice) + " dt")
+            StatCard("Most Expensive Product", maxPriceProduct ?: "N/A")
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF2FFE7))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Total Stock Value", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "${"%.2f".format(totalValue)} DT",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+            Spacer(Modifier.height(30.dp))
 
             Text(
-                text = "Stock by Product",
+                text = "Stock Distribution",
                 style = MaterialTheme.typography.titleMedium
             )
 
-            // -------------------------------------
-            // BAR CHART (simple visualization)
-            // -------------------------------------
-            BarChart(products = state.products)
-        }
-    }
-}
+            Spacer(Modifier.height(10.dp))
 
-@Composable
-fun BarChart(products: List<com.example.smartshopapp.data.local.ProductEntity>) {
-    if (products.isEmpty()) {
-        Text("No data to display")
-        return
-    }
-
-    val maxQuantity = products.maxOf { it.quantity }.coerceAtLeast(1)
-
-    Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .padding(10.dp)
-    ) {
-        val barWidth = size.width / (products.size * 2)
-
-        products.forEachIndexed { index, product ->
-            val barHeight = (product.quantity.toFloat() / maxQuantity) * size.height
-
-            drawRect(
-                color = Color(0xFF4A90E2),
-                topLeft = androidx.compose.ui.geometry.Offset(
-                    x = index * barWidth * 2,
-                    y = size.height - barHeight
-                ),
-                size = androidx.compose.ui.geometry.Size(
-                    width = barWidth,
-                    height = barHeight
-                )
-            )
+            // ---------- SIMPLE BAR CHART ----------
+            BarChart(data = chartData)
         }
     }
 }

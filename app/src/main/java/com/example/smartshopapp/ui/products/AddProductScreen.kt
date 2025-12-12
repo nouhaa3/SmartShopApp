@@ -17,8 +17,6 @@ fun AddProductScreen(
     var quantity by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
 
-    val state = viewModel.uiState.collectAsState().value
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -26,12 +24,12 @@ fun AddProductScreen(
             )
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(20.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxWidth()
         ) {
 
             OutlinedTextField(
@@ -41,6 +39,8 @@ fun AddProductScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = quantity,
                 onValueChange = { quantity = it },
@@ -48,32 +48,30 @@ fun AddProductScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = price,
                 onValueChange = { price = it },
-                label = { Text("Price (DT)") },
+                label = { Text("Price") },
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(Modifier.height(24.dp))
+
             Button(
                 onClick = {
-                    val qty = quantity.toIntOrNull() ?: 0
-                    val pr = price.toDoubleOrNull() ?: 0.0
-
-                    viewModel.addProduct(name, qty, pr)
-                    onBack()
+                    viewModel.addProduct(
+                        name = name,
+                        quantity = quantity.toIntOrNull() ?: 0,
+                        price = price.toDoubleOrNull() ?: 0.0
+                    ) {
+                        onBack()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save")
-            }
-
-            if (state.loading) {
-                CircularProgressIndicator()
-            }
-
-            if (state.error != null) {
-                Text(state.error!!, color = MaterialTheme.colorScheme.error)
+                Text("Save Product")
             }
         }
     }

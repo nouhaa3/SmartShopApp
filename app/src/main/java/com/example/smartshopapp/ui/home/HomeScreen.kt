@@ -10,24 +10,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onProductsClick: () -> Unit,
+    onStatsClick: () -> Unit
+) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("SmartShop Dashboard") }
-            )
+            TopAppBar(title = { Text("SmartShop Dashboard") })
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
+                .padding(20.dp)
         ) {
-            Text(
-                text = "Welcome to SmartShop!",
-                style = MaterialTheme.typography.headlineSmall
-            )
+            Button(onClick = onProductsClick, modifier = Modifier.fillMaxWidth()) {
+                Text("Products")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(onClick = onStatsClick, modifier = Modifier.fillMaxWidth()) {
+                Text("Statistics")
+            }
         }
     }
 }
+

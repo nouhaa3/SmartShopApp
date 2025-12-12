@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.smartshopapp.navigation.AppNavigation
+import com.example.smartshopapp.navigation.AppNavGraph
 import com.example.smartshopapp.ui.theme.SmartShopAppTheme
 import com.google.firebase.FirebaseApp
 
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             SmartShopAppTheme {
                 // Launch the navigation graph (Splash → Login → Register → Home)
-                AppNavigation()
+                AppNavGraph()
             }
         }
     }
