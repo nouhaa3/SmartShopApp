@@ -70,7 +70,8 @@ fun AppNavGraph() {
                 onAddProduct = { navController.navigate("add_product") },
                 onEditProduct = { product ->
                     navController.navigate("edit_product/${product.id}")
-                }
+                },
+                onBack = { navController.navigate("home") }
             )
         }
 
@@ -97,7 +98,10 @@ fun AppNavGraph() {
 
         // ------------------ STATISTICS ------------------
         composable("statistics") {
-            StatisticsScreen(repository)
+            StatisticsScreen(
+                repository = repository,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

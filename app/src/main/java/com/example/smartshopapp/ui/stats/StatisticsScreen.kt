@@ -2,6 +2,7 @@ package com.example.smartshopapp.ui.stats
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -9,11 +10,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.smartshopapp.data.remote.ProductRepository
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.ArrowBack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
-    repository: ProductRepository
+    repository: ProductRepository,
+    onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
 
@@ -40,7 +43,17 @@ fun StatisticsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Statistics") })
+            TopAppBar(
+                title = { Text("Statistics") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
         }
     ) { padding ->
 

@@ -12,19 +12,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.smartshopapp.data.model.Product
 import com.example.smartshopapp.domain.ProductListViewModel
+import androidx.compose.material.icons.filled.ArrowBack
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductListScreen(
     viewModel: ProductListViewModel,
     onAddProduct: () -> Unit,
-    onEditProduct: (Product) -> Unit
+    onEditProduct: (Product) -> Unit,
+    onBack: () -> Unit
 ) {
     val products by viewModel.products.collectAsState()
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Products") })
+            TopAppBar(
+                title = { Text("Products") },
+                navigationIcon = {
+                    IconButton(onClick = { onBack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddProduct) {
