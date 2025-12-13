@@ -1,32 +1,82 @@
 package com.example.smartshopapp.data.remote
 
+import android.content.Context
+import com.example.smartshopapp.data.local.AppDatabase
 import com.example.smartshopapp.data.model.Product
+import com.example.smartshopapp.data.model.toEntity
+import com.example.smartshopapp.data.model.toProduct
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
-class ProductRepository(
-    private val firestore: FirestoreProductService = FirestoreProductService()
-) {
+class ProductRepository(context: Context) {
 
+    private val db = FirebaseFirestore.getInstance()
+    private val productsRef = db.collection("products")
+
+    // ROOM LOCAL DB
+    private val localDb = AppDatabase.getInstance(context)
+    private val dao = localDb.productDao()
+
+    private val ioScope = CoroutineScope(Dispatchers.IO)
+
+    // ------------------------------
+    // GET PRODUCTS (LOCAL FIRST)
+    // ------------------------------
     suspend fun getProducts(): List<Product> {
-        return firestore.getProducts()
+        return dao.getAllProducts().map { it.toProduct() }
     }
 
-    suspend fun addProduct(product: Product): Boolean {
-        return firestore.addProduct(product)
-    }
-
-    suspend fun updateProduct(product: Product): Boolean {
-        return firestore.updateProduct(product)
-    }
-
+    // 🔥 Fonction MANQUANTE pour StatisticsScreen
     suspend fun getAllProductsOnce(): List<Product> {
-        return firestore.getProductsOnce()
-    }
-
-    suspend fun deleteProduct(id: String): Boolean {
-        return firestore.deleteProduct(id)
+        return dao.getAllProducts().map { it.toProduct() }
     }
 
     suspend fun getProductById(id: String): Product? {
-        return firestore.getProductById(id)
+        return dao.getById(id)?.toProduct()
+    }
+
+    // ------------------------------
+    // ADD PRODUCT
+    // ------------------------------
+    suspend fun addProduct(product: Product) {
+        productsRef.document(product.id).set(product).await()
+        dao.insertProduct(product.toEntity())
+    }
+
+    // ------------------------------
+    // UPDATE PRODUCT
+    // ------------------------------
+    suspend fun updateProduct(product: Product) {
+        productsRef.document(product.id).set(product).await()
+        dao.insertProduct(product.toEntity())
+    }
+
+    // ------------------------------
+    // DELETE PRODUCT
+    // ------------------------------
+    suspend fun deleteProduct(id: String) {
+        productsRef.document(id).delete().await()
+        dao.deleteById(id)
+    }
+
+    // ------------------------------
+    // FIRESTORE → LOCAL SYNC
+    // ------------------------------
+    fun startRealtimeSync() {
+        productsRef.addSnapshotListener { snapshot, _ ->
+            if (snapshot != null) {
+
+                val list = snapshot.toObjects(Product::class.java)
+
+                ioScope.launch {
+                    list.forEach { product ->
+                        dao.insertProduct(product.toEntity())
+                    }
+                }
+            }
+        }
     }
 }

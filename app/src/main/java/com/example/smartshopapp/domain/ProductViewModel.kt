@@ -4,13 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartshopapp.data.model.Product
 import com.example.smartshopapp.data.remote.ProductRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-    class ProductViewModel(
-        private val repo: ProductRepository
-    ) : ViewModel() {
+class ProductViewModel(
+    private val repo: ProductRepository
+) : ViewModel() {
 
-    // addProduct with validation and onError callback
+    private val _product = MutableStateFlow<Product?>(null)
+    val product: StateFlow<Product?> = _product
+
+    suspend fun getProductById(id: String): Product? {
+        return repo.getProductById(id)
+    }
+
+    // ----------------------------
+    // ADD PRODUCT
+    // ----------------------------
     fun addProduct(
         name: String,
         quantity: Int,
@@ -18,7 +29,6 @@ import kotlinx.coroutines.launch
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        // ViewModel-level validation (duplicate of UI checks, but safer)
         val validationError = validateProductFields(name, quantity, price)
         if (validationError != null) {
             onError(validationError)
@@ -27,15 +37,26 @@ import kotlinx.coroutines.launch
 
         viewModelScope.launch {
             try {
-                val product = Product(id = "", name = name, quantity = quantity, price = price)
-                val result = repo.addProduct(product)
-                if (result) onSuccess() else onError("Erreur lors de l'ajout (cloud).")
+                val product = Product(
+                    id = System.currentTimeMillis().toString(), // simple unique ID
+                    name = name,
+                    quantity = quantity,
+                    price = price
+                )
+
+                repo.addProduct(product) // returns Unit → no check needed
+
+                onSuccess()
+
             } catch (e: Exception) {
                 onError(e.message ?: "Erreur inconnue lors de l'ajout.")
             }
         }
     }
 
+    // ----------------------------
+    // UPDATE PRODUCT
+    // ----------------------------
     fun updateProduct(
         product: Product,
         onSuccess: () -> Unit,
@@ -49,22 +70,32 @@ import kotlinx.coroutines.launch
 
         viewModelScope.launch {
             try {
-                val result = repo.updateProduct(product)
-                if (result) onSuccess() else onError("Erreur lors de la mise à jour (cloud).")
+                repo.updateProduct(product)  // returns Unit
+                onSuccess()
+
             } catch (e: Exception) {
                 onError(e.message ?: "Erreur inconnue lors de la mise à jour.")
             }
         }
     }
 
-    private fun validateProductFields(name: String, quantity: Int, price: Double): String? {
-        if (name.isBlank()) return "Le nom du produit ne peut pas être vide."
-        if (quantity < 0) return "La quantité doit être supérieure ou égale à 0."
-        if (price <= 0.0) return "Le prix doit être strictement supérieur à 0."
-        return null
+    // ----------------------------
+    // LOAD SINGLE PRODUCT
+    // ----------------------------
+    fun loadProduct(id: String) {
+        viewModelScope.launch {
+            val all = repo.getProducts()
+            _product.value = all.find { it.id == id }
+        }
     }
 
-    suspend fun getProduct(id: String): Product? {
-        return repo.getProductById(id)
+    // ----------------------------
+    // VALIDATION
+    // ----------------------------
+    private fun validateProductFields(name: String, quantity: Int, price: Double): String? {
+        if (name.isBlank()) return "Le nom du produit ne peut pas être vide."
+        if (quantity < 0) return "La quantité doit être ≥ 0."
+        if (price <= 0) return "Le prix doit être > 0."
+        return null
     }
 }

@@ -2,11 +2,12 @@ package com.example.smartshopapp.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class AuthViewModel : ViewModel() {
 
@@ -21,7 +22,6 @@ class AuthViewModel : ViewModel() {
     // -------------------------
     fun register(email: String, password: String) {
         viewModelScope.launch {
-            _uiState.value = AuthUiState(loading = true)
 
             if (email.isBlank()) {
                 _uiState.value = AuthUiState(error = "Email cannot be empty")
@@ -33,29 +33,34 @@ class AuthViewModel : ViewModel() {
                 return@launch
             }
 
-            auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
+            try {
+                _uiState.value = AuthUiState(loading = true)
 
-                        // Create Firestore profile
-                        val userData = mapOf(
+                // 🔥 Firebase Auth (COROUTINE)
+                val result = auth
+                    .createUserWithEmailAndPassword(email, password)
+                    .await()
+
+                val uid = result.user?.uid ?: throw Exception("User ID missing")
+
+                // 🔥 Save profile
+                firestore.collection("users")
+                    .document(uid)
+                    .set(
+                        mapOf(
                             "email" to email,
                             "createdAt" to System.currentTimeMillis()
                         )
+                    )
+                    .await()
 
-                        firestore.collection("users")
-                            .document(uid)
-                            .set(userData)
+                _uiState.value = AuthUiState(success = true)
 
-                        _uiState.value = AuthUiState(success = true)
-
-                    } else {
-                        _uiState.value = AuthUiState(
-                            error = task.exception?.message ?: "Registration failed"
-                        )
-                    }
-                }
+            } catch (e: Exception) {
+                _uiState.value = AuthUiState(
+                    error = mapFirebaseError(e)
+                )
+            }
         }
     }
 
@@ -64,7 +69,6 @@ class AuthViewModel : ViewModel() {
     // -------------------------
     fun login(email: String, password: String) {
         viewModelScope.launch {
-            _uiState.value = AuthUiState(loading = true)
 
             if (email.isBlank()) {
                 _uiState.value = AuthUiState(error = "Email cannot be empty")
@@ -76,25 +80,48 @@ class AuthViewModel : ViewModel() {
                 return@launch
             }
 
-            auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        _uiState.value = AuthUiState(success = true)
-                    } else {
-                        _uiState.value = AuthUiState(
-                            error = task.exception?.message ?: "Login failed"
-                        )
-                    }
-                }
+            try {
+                _uiState.value = AuthUiState(loading = true)
+
+                // 🔥 Firebase Auth (COROUTINE)
+                auth.signInWithEmailAndPassword(email, password).await()
+
+                _uiState.value = AuthUiState(success = true)
+
+            } catch (e: Exception) {
+                _uiState.value = AuthUiState(
+                    error = mapFirebaseError(e)
+                )
+            }
         }
     }
 
-    // Reset UI state
+    // -------------------------
+    // ERROR MAPPING
+    // -------------------------
+    private fun mapFirebaseError(e: Exception): String {
+        return when (e) {
+            is FirebaseAuthInvalidUserException ->
+                "No account found with this email."
+
+            is FirebaseAuthInvalidCredentialsException ->
+                "Incorrect email or password."
+
+            is FirebaseAuthUserCollisionException ->
+                "An account already exists with this email."
+
+            is FirebaseAuthWeakPasswordException ->
+                "Password must be at least 6 characters."
+
+            else ->
+                "Authentication failed. Please try again."
+        }
+    }
+
     fun reset() {
         _uiState.value = AuthUiState()
     }
 
-    // Logout
     fun logout() {
         auth.signOut()
     }

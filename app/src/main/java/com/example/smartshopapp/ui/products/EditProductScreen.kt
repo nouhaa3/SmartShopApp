@@ -17,6 +17,7 @@ fun EditProductScreen(
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var product by remember { mutableStateOf<Product?>(null) }
     var name by remember { mutableStateOf("") }
@@ -27,10 +28,8 @@ fun EditProductScreen(
     var quantityError by remember { mutableStateOf<String?>(null) }
     var priceError by remember { mutableStateOf<String?>(null) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-
     LaunchedEffect(productId) {
-        val loaded = viewModel.getProduct(productId)
+        val loaded = viewModel.getProductById(productId)
         product = loaded
         loaded?.let {
             name = it.name
@@ -41,13 +40,14 @@ fun EditProductScreen(
 
     fun validateUI(): Boolean {
         var ok = true
+
         nameError = if (name.isBlank()) { ok = false; "Nom requis" } else null
 
         val q = quantityText.toIntOrNull()
         quantityError = when {
             quantityText.isBlank() -> { ok = false; "Quantité requise" }
             q == null -> { ok = false; "Quantité invalide" }
-            q < 0 -> { ok = false; "Quantité >= 0 requise" }
+            q < 0 -> { ok = false; "Quantité >= 0" }
             else -> null
         }
 
@@ -55,7 +55,7 @@ fun EditProductScreen(
         priceError = when {
             priceText.isBlank() -> { ok = false; "Prix requis" }
             p == null -> { ok = false; "Prix invalide" }
-            p <= 0.0 -> { ok = false; "Prix > 0 requis" }
+            p <= 0.0 -> { ok = false; "Prix > 0" }
             else -> null
         }
 
@@ -66,10 +66,10 @@ fun EditProductScreen(
         topBar = {
             TopAppBar(title = { Text("Edit Product") })
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
-            modifier = Modifier
+            Modifier
                 .padding(padding)
                 .padding(20.dp)
                 .fillMaxWidth()
@@ -84,7 +84,7 @@ fun EditProductScreen(
                 value = name,
                 onValueChange = {
                     name = it
-                    if (nameError != null) nameError = null
+                    nameError = null
                 },
                 label = { Text("Product Name") },
                 modifier = Modifier.fillMaxWidth(),
@@ -97,8 +97,8 @@ fun EditProductScreen(
             OutlinedTextField(
                 value = quantityText,
                 onValueChange = {
-                    quantityText = it.filter { ch -> ch.isDigit() }
-                    if (quantityError != null) quantityError = null
+                    quantityText = it.filter { c -> c.isDigit() }
+                    quantityError = null
                 },
                 label = { Text("Quantity") },
                 modifier = Modifier.fillMaxWidth(),
@@ -111,8 +111,9 @@ fun EditProductScreen(
             OutlinedTextField(
                 value = priceText,
                 onValueChange = {
-                    priceText = it.filter { ch -> ch.isDigit() || ch == '.' || ch == ',' }.replace(',', '.')
-                    if (priceError != null) priceError = null
+                    priceText = it.filter { c -> c.isDigit() || c == '.' || c == ',' }
+                        .replace(',', '.')
+                    priceError = null
                 },
                 label = { Text("Price (DT)") },
                 modifier = Modifier.fillMaxWidth(),
@@ -126,18 +127,18 @@ fun EditProductScreen(
                 onClick = {
                     if (!validateUI()) return@Button
 
-                    val q = quantityText.toInt()
-                    val p = priceText.toDouble()
-
                     val updated = product!!.copy(
                         name = name,
-                        quantity = q,
-                        price = p
+                        quantity = quantityText.toInt(),
+                        price = priceText.toDouble()
                     )
 
-                    viewModel.updateProduct(updated,
+                    viewModel.updateProduct(
+                        updated,
                         onSuccess = { onBack() },
-                        onError = { msg -> scope.launch { snackbarHostState.showSnackbar(msg) } }
+                        onError = { msg ->
+                            scope.launch { snackbarHostState.showSnackbar(msg) }
+                        }
                     )
                 },
                 modifier = Modifier.fillMaxWidth()

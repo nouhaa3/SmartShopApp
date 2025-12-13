@@ -2,6 +2,7 @@ package com.example.smartshopapp.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,89 +19,130 @@ import com.example.smartshopapp.ui.products.AddProductScreen
 import com.example.smartshopapp.ui.products.EditProductScreen
 import com.example.smartshopapp.ui.products.ProductListScreen
 import com.example.smartshopapp.ui.stats.StatisticsScreen
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun AppNavGraph() {
 
     val navController = rememberNavController()
+    val context = LocalContext.current
 
-    // ------------------ AUTH VIEWMODEL ------------------
+    // ------------------ AUTH ------------------
     val authVM = remember { AuthViewModel() }
+    val firebaseAuth = FirebaseAuth.getInstance()
 
-    // ------------------ PRODUCT REPO + VMs ------------------
-    val repository = remember { ProductRepository() }
+    // ------------------ DATA LAYER ------------------
+    val repository = remember { ProductRepository(context) }
+
+    // ------------------ VIEWMODELS ------------------
     val listVM = remember { ProductListViewModel(repository) }
     val productVM = remember { ProductViewModel(repository) }
 
+    // ------------------ START DESTINATION ------------------
+    val startDestination =
+        if (firebaseAuth.currentUser != null) "home" else "login"
+
+    // ------------------ NAV HOST ------------------
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = startDestination
     ) {
 
-        // ------------------ LOGIN ------------------
+        // ================== LOGIN ==================
         composable("login") {
             LoginScreen(
                 viewModel = authVM,
-                onLoginSuccess = { navController.navigate("home") },
-                onRegisterClick = { navController.navigate("register") }
+                onLoginSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onRegisterClick = {
+                    navController.navigate("register")
+                }
             )
         }
 
-        // ------------------ REGISTER ------------------
+        // ================== REGISTER ==================
         composable("register") {
             RegisterScreen(
                 viewModel = authVM,
-                onRegisterSuccess = { navController.navigate("home") },
-                onLoginClick = { navController.navigate("login") }
+                onRegisterSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("register") { inclusive = true }
+                    }
+                },
+                onLoginClick = {
+                    navController.popBackStack()
+                }
             )
         }
 
-        // ------------------ HOME ------------------
+        // ================== HOME ==================
         composable("home") {
             HomeScreen(
                 onProductsClick = { navController.navigate("product_list") },
-                onStatsClick = { navController.navigate("statistics") }
+                onStatsClick = { navController.navigate("statistics") },
+                onLogout = {
+                    authVM.logout()
+                    navController.navigate("login") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
             )
         }
 
-        // ------------------ PRODUCT LIST ------------------
+        // ================== PRODUCT LIST ==================
         composable("product_list") {
             ProductListScreen(
                 viewModel = listVM,
-                onAddProduct = { navController.navigate("add_product") },
+                onAddProduct = {
+                    navController.navigate("add_product")
+                },
                 onEditProduct = { product ->
                     navController.navigate("edit_product/${product.id}")
                 },
-                onBack = { navController.navigate("home") }
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
 
-        // ------------------ ADD PRODUCT ------------------
+        // ================== ADD PRODUCT ==================
         composable("add_product") {
             AddProductScreen(
                 viewModel = productVM,
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
 
-        // ------------------ EDIT PRODUCT ------------------
+        // ================== EDIT PRODUCT ==================
         composable(
-            "edit_product/{productId}",
-            arguments = listOf(navArgument("productId") { type = NavType.StringType })
+            route = "edit_product/{productId}",
+            arguments = listOf(
+                navArgument("productId") { type = NavType.StringType }
+            )
         ) { entry ->
             val productId = entry.arguments?.getString("productId") ?: ""
+
             EditProductScreen(
                 productId = productId,
                 viewModel = productVM,
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
 
-        // ------------------ STATISTICS ------------------
+        // ================== STATISTICS ==================
         composable("statistics") {
             StatisticsScreen(
                 repository = repository,
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
     }
