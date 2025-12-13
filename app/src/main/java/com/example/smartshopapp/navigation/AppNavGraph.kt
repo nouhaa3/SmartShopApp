@@ -15,6 +15,7 @@ import com.example.smartshopapp.data.remote.ProductRepository
 import com.example.smartshopapp.domain.ProductListViewModel
 import com.example.smartshopapp.domain.ProductViewModel
 import com.example.smartshopapp.ui.home.HomeScreen
+import com.example.smartshopapp.ui.onboarding.OnboardingScreen
 import com.example.smartshopapp.ui.products.AddProductScreen
 import com.example.smartshopapp.ui.products.EditProductScreen
 import com.example.smartshopapp.ui.products.ProductListScreen
@@ -31,7 +32,7 @@ fun AppNavGraph() {
     val authVM = remember { AuthViewModel() }
     val firebaseAuth = FirebaseAuth.getInstance()
 
-    // ------------------ DATA LAYER ------------------
+    // ------------------ DATA ------------------
     val repository = remember { ProductRepository(context) }
 
     // ------------------ VIEWMODELS ------------------
@@ -40,13 +41,24 @@ fun AppNavGraph() {
 
     // ------------------ START DESTINATION ------------------
     val startDestination =
-        if (firebaseAuth.currentUser != null) "home" else "login"
+        if (firebaseAuth.currentUser != null) "home" else "onboarding"
 
     // ------------------ NAV HOST ------------------
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
+
+        // ================== ONBOARDING ==================
+        composable("onboarding") {
+            OnboardingScreen(
+                onGetStarted = {
+                    navController.navigate("register") {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                }
+            )
+        }
 
         // ================== LOGIN ==================
         composable("login") {
@@ -96,15 +108,11 @@ fun AppNavGraph() {
         composable("product_list") {
             ProductListScreen(
                 viewModel = listVM,
-                onAddProduct = {
-                    navController.navigate("add_product")
-                },
+                onAddProduct = { navController.navigate("add_product") },
                 onEditProduct = { product ->
                     navController.navigate("edit_product/${product.id}")
                 },
-                onBack = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -112,27 +120,22 @@ fun AppNavGraph() {
         composable("add_product") {
             AddProductScreen(
                 viewModel = productVM,
-                onBack = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
             )
         }
 
         // ================== EDIT PRODUCT ==================
         composable(
             route = "edit_product/{productId}",
-            arguments = listOf(
-                navArgument("productId") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("productId") {
+                type = NavType.StringType
+            })
         ) { entry ->
             val productId = entry.arguments?.getString("productId") ?: ""
-
             EditProductScreen(
                 productId = productId,
                 viewModel = productVM,
-                onBack = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -140,9 +143,7 @@ fun AppNavGraph() {
         composable("statistics") {
             StatisticsScreen(
                 repository = repository,
-                onBack = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
             )
         }
     }
