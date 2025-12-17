@@ -36,14 +36,14 @@ class AuthViewModel : ViewModel() {
             try {
                 _uiState.value = AuthUiState(loading = true)
 
-                // 🔥 Firebase Auth (COROUTINE)
+                // Firebase Auth (COROUTINE)
                 val result = auth
                     .createUserWithEmailAndPassword(email, password)
                     .await()
 
                 val uid = result.user?.uid ?: throw Exception("User ID missing")
 
-                // 🔥 Save profile
+                // Save profile
                 firestore.collection("users")
                     .document(uid)
                     .set(
@@ -83,7 +83,7 @@ class AuthViewModel : ViewModel() {
             try {
                 _uiState.value = AuthUiState(loading = true)
 
-                // 🔥 Firebase Auth (COROUTINE)
+                // Firebase Auth (COROUTINE)
                 auth.signInWithEmailAndPassword(email, password).await()
 
                 _uiState.value = AuthUiState(success = true)

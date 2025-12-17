@@ -29,7 +29,7 @@ class ProductRepository(context: Context) {
         return dao.getAllProducts().map { it.toProduct() }
     }
 
-    // 🔥 Fonction MANQUANTE pour StatisticsScreen
+    // Fonctions pour StatisticsScreen
     suspend fun getAllProductsOnce(): List<Product> {
         return dao.getAllProducts().map { it.toProduct() }
     }
