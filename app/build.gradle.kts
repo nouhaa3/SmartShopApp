@@ -48,7 +48,7 @@ android {
 }
 
 dependencies {
-
+    implementation("androidx.compose.material:material-icons-extended")
     // Firebase BOM (controls all versions)
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
 

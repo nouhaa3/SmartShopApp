@@ -102,10 +102,13 @@ fun AppNavGraph() {
                     }
                 },
                 onLoginClick = {
-                    navController.popBackStack()
+                    navController.navigate("login") {
+                        popUpTo("register") { inclusive = true }
+                    }
                 }
             )
         }
+
 
         // ================== HOME ==================
         composable("home") {

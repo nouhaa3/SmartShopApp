@@ -15,17 +15,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.smartshopapp.R
+import com.example.smartshopapp.ui.theme.OldRose
 
 @Composable
 fun WelcomeScreen(
     onStart: () -> Unit
 ) {
-    val backgroundColor = Color(0xFFDCCAD6) // SAME as onboarding blob
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor),
+            .background(OldRose),
         contentAlignment = Alignment.Center
     ) {
 

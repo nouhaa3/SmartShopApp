@@ -22,11 +22,12 @@ fun LuxuryButton(
             .fillMaxWidth()
             .height(54.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary
+            containerColor = MaterialTheme.colorScheme.onPrimary
         )
     ) {
         Text(
             text = text,
+            color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.titleMedium
         )
     }

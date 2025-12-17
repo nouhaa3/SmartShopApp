@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.smartshopapp.ui.onboarding.components.LuxuryButton
+import com.example.smartshopapp.ui.theme.OldRose
 import kotlinx.coroutines.launch
 
 @Composable
@@ -23,12 +24,11 @@ fun OnboardingScreen(
     val scope = rememberCoroutineScope()
 
     // SAME BACKGROUND FOR FULL PAGE
-    val backgroundColor = Color(0xFFDCCAD6)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor)
+            .background(OldRose)
     ) {
 
         Column(
@@ -97,7 +97,7 @@ fun OnboardingScreen(
                     .padding(16.dp)
                     .alpha(0.4f)
             ) {
-                Text("Skip")
+                Text("Skip", color = Color.White)
             }
         }
     }

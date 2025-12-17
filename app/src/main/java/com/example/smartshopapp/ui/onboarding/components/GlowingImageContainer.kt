@@ -13,6 +13,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import com.example.smartshopapp.ui.onboarding.OrganicBlobShape
+import com.example.smartshopapp.ui.theme.OldRose
 
 @Composable
 fun GlowingImageContainer(
@@ -29,7 +30,7 @@ fun GlowingImageContainer(
             modifier = Modifier
                 .matchParentSize()
                 .clip(OrganicBlobShape())
-                .background(backgroundColor.copy(alpha = 0.9f))
+                .background(OldRose)
                 .blur(60.dp)
         )
 

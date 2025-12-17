@@ -11,17 +11,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.smartshopapp.ui.onboarding.components.GlowingImageContainer
+import com.example.smartshopapp.ui.theme.OldRose
 
 @Composable
 fun OnboardingItem(
     page: OnboardingPage
 ) {
-    val backgroundColor = Color(0xFFDCCAD6) // SAME as blob
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor)
+            .background(OldRose) // FULL background OldRose
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -29,7 +28,7 @@ fun OnboardingItem(
 
         GlowingImageContainer(
             imageRes = page.image,
-            backgroundColor = backgroundColor
+            backgroundColor = OldRose.copy(alpha = 0.35f) // FIXED
         )
 
         Spacer(modifier = Modifier.height(32.dp))
