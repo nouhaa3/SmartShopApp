@@ -1,5 +1,6 @@
 package com.example.smartshopapp.ui.onboarding
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -7,54 +8,97 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.smartshopapp.ui.onboarding.components.LuxuryButton
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingScreen(
-    onGetStarted: () -> Unit
+    onFinish: () -> Unit,
+    onSkip: () -> Unit
 ) {
-    val pages = listOf(
-        OnboardingPage(
-            title = "Welcome to SmartShop",
-            description = "Manage your products easily and efficiently."
-        ),
-        OnboardingPage(
-            title = "Track Your Stock",
-            description = "Monitor stock levels and avoid shortages."
-        ),
-        OnboardingPage(
-            title = "Smart Statistics",
-            description = "Analyze your sales and performance in real time."
-        )
-    )
-
-    val pagerState = rememberPagerState { pages.size }
+    val pagerState = rememberPagerState { onboardingPages.size }
     val scope = rememberCoroutineScope()
 
-    Scaffold(
-        bottomBar = {
-            BottomBar(
-                currentPage = pagerState.currentPage,
-                pageCount = pages.size,
-                onNext = {
-                    scope.launch {
-                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                    }
-                },
-                onGetStarted = onGetStarted
-            )
-        }
-    ) { padding ->
+    // SAME BACKGROUND FOR FULL PAGE
+    val backgroundColor = Color(0xFFDCCAD6)
 
-        HorizontalPager(
-            state = pagerState,
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor)
+    ) {
+
+        Column(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
-        ) { page ->
-            OnboardingPageContent(pages[page])
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ---------- PAGER ----------
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f)
+            ) { page ->
+
+                val current = onboardingPages[page]
+
+                if (current.isWelcome) {
+                    WelcomeScreen(
+                        onStart = {
+                            scope.launch {
+                                pagerState.animateScrollToPage(1)
+                            }
+                        }
+                    )
+                } else {
+                    OnboardingItem(page = current)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ---------- BUTTON ----------
+            LuxuryButton(
+                text = if (pagerState.currentPage == onboardingPages.lastIndex)
+                    "Get Started"
+                else
+                    "Continue",
+                modifier = Modifier
+                    .width(200.dp)
+                    .height(48.dp),
+                onClick = {
+                    scope.launch {
+                        if (pagerState.currentPage < onboardingPages.lastIndex) {
+                            pagerState.animateScrollToPage(
+                                pagerState.currentPage + 1
+                            )
+                        } else {
+                            onFinish()
+                        }
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        // ---------- SKIP ----------
+        if (pagerState.currentPage < onboardingPages.lastIndex) {
+            TextButton(
+                onClick = onSkip,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .alpha(0.4f)
+            ) {
+                Text("Skip")
+            }
         }
     }
 }

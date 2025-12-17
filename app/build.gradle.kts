@@ -61,8 +61,7 @@ dependencies {
     // --- Compose + AndroidX ---
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation("androidx.compose.foundation:foundation:1.6.0")
-
+    implementation("androidx.compose.foundation:foundation:1.6.1")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)

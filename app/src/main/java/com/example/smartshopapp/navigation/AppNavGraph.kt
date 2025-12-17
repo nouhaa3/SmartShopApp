@@ -16,6 +16,7 @@ import com.example.smartshopapp.domain.ProductListViewModel
 import com.example.smartshopapp.domain.ProductViewModel
 import com.example.smartshopapp.ui.home.HomeScreen
 import com.example.smartshopapp.ui.onboarding.OnboardingScreen
+import com.example.smartshopapp.ui.onboarding.WelcomeScreen
 import com.example.smartshopapp.ui.products.AddProductScreen
 import com.example.smartshopapp.ui.products.EditProductScreen
 import com.example.smartshopapp.ui.products.ProductListScreen
@@ -41,7 +42,7 @@ fun AppNavGraph() {
 
     // ------------------ START DESTINATION ------------------
     val startDestination =
-        if (firebaseAuth.currentUser != null) "home" else "onboarding"
+        if (firebaseAuth.currentUser != null) "home" else "welcome"
 
     // ------------------ NAV HOST ------------------
     NavHost(
@@ -49,10 +50,26 @@ fun AppNavGraph() {
         startDestination = startDestination
     ) {
 
+        // ================== WELCOME ==================
+        composable("welcome") {
+            WelcomeScreen(
+                onStart = {
+                    navController.navigate("onboarding") {
+                        popUpTo("welcome") { inclusive = true }
+                    }
+                }
+            )
+        }
+
         // ================== ONBOARDING ==================
         composable("onboarding") {
             OnboardingScreen(
-                onGetStarted = {
+                onFinish = {
+                    navController.navigate("register") {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                },
+                onSkip = {
                     navController.navigate("register") {
                         popUpTo("onboarding") { inclusive = true }
                     }
