@@ -113,8 +113,15 @@ fun AppNavGraph() {
         // ================== HOME ==================
         composable("home") {
             HomeScreen(
-                onProductsClick = { navController.navigate("product_list") },
-                onStatsClick = { navController.navigate("statistics") },
+                onProductsClick = {
+                    navController.navigate("product_list")
+                },
+                onStatsClick = {
+                    navController.navigate("statistics")
+                },
+                onProfileClick = {
+                    navController.navigate("profile")
+                },
                 onLogout = {
                     authVM.logout()
                     navController.navigate("login") {
