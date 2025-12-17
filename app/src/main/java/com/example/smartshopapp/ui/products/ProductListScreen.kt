@@ -1,19 +1,25 @@
 package com.example.smartshopapp.ui.products
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.smartshopapp.data.model.Product
 import com.example.smartshopapp.domain.ProductListViewModel
-import androidx.compose.material.icons.filled.ArrowBack
-
+import com.example.smartshopapp.ui.theme.OldRose
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,31 +32,62 @@ fun ProductListScreen(
     val products by viewModel.products.collectAsState()
 
     Scaffold(
+        containerColor = OldRose,
         topBar = {
             TopAppBar(
-                title = { Text("Products") },
+                title = {
+                    Text(
+                        "My Products",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { onBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = OldRose
+                )
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddProduct) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
+            FloatingActionButton(
+                onClick = onAddProduct,
+                containerColor = Color.White,
+                contentColor = OldRose
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Product")
             }
         }
     ) { padding ->
 
         if (products.isEmpty()) {
+            // EMPTY STATE
             Box(
                 modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
             ) {
-                Text("No products found.")
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "🌸 No products yet 🌸",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Start by adding your first item",
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
+                }
             }
             return@Scaffold
         }
@@ -58,13 +95,11 @@ fun ProductListScreen(
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
-                .padding(12.dp)
-                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(products.size) { index ->
-                val product = products[index]
-
-                ProductItem(
+            items(products) { product ->
+                ProductCard(
                     product = product,
                     onEdit = { onEditProduct(product) },
                     onDelete = { viewModel.deleteProduct(product.id) }
@@ -75,7 +110,7 @@ fun ProductListScreen(
 }
 
 @Composable
-fun ProductItem(
+private fun ProductCard(
     product: Product,
     onEdit: () -> Unit,
     onDelete: () -> Unit
@@ -83,24 +118,51 @@ fun ProductItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clickable { onEdit() }
+            .clickable { onEdit() },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(18.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
 
             Column {
-                Text(product.name, style = MaterialTheme.typography.titleMedium)
-                Text("Qty: ${product.quantity}")
-                Text("Price: ${product.price} DT")
+                Text(
+                    text = product.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF3B2F3A)
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Quantity: ${product.quantity}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF5A4A55)
+                )
+
+                Text(
+                    text = "${product.price} DT",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = OldRose
+                )
             }
 
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = OldRose
+                )
             }
         }
     }

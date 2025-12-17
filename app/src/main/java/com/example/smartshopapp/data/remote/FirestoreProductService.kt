@@ -1,18 +1,27 @@
 package com.example.smartshopapp.data.remote
 
+import android.net.Uri
 import com.example.smartshopapp.data.model.Product
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 
 class FirestoreProductService {
 
-    private val db = FirebaseFirestore.getInstance()
-    private val productsRef = db.collection("products")
+    private val firestore = FirebaseFirestore.getInstance()
+    private val productsRef = firestore.collection("products")
 
-    suspend fun getProducts(): List<Product> {
-        return productsRef.get().await().toObjects(Product::class.java)
+    private val storage = FirebaseStorage.getInstance()
+    private val imagesRef = storage.reference.child("product_images")
+
+    // ---------------- IMAGE UPLOAD ----------------
+    suspend fun uploadProductImage(uri: Uri): String {
+        val imageRef = imagesRef.child("${System.currentTimeMillis()}.jpg")
+        imageRef.putFile(uri).await()
+        return imageRef.downloadUrl.await().toString()
     }
 
+    // ---------------- ADD PRODUCT ----------------
     suspend fun addProduct(product: Product): Boolean {
         return try {
             val newId = productsRef.document().id
@@ -25,14 +34,8 @@ class FirestoreProductService {
     }
 
     suspend fun getProductsOnce(): List<Product> {
-        return try {
-            val snapshot = productsRef.get().await()
-            snapshot.toObjects(Product::class.java)
-        } catch (e: Exception) {
-            emptyList()
-        }
+        return productsRef.get().await().toObjects(Product::class.java)
     }
-
 
     suspend fun updateProduct(product: Product): Boolean {
         return try {

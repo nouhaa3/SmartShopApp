@@ -2,20 +2,21 @@ package com.example.smartshopapp.data.model
 
 import com.example.smartshopapp.data.local.ProductEntity
 
-fun ProductEntity.toProduct(): Product {
-    return Product(
-        id = id,
-        name = name,
-        quantity = quantity,
-        price = price
-    )
-}
+fun Product.toEntity() = ProductEntity(
+    id = id,
+    name = name,
+    category = category,
+    quantity = quantity,
+    price = price,
+    imageUri = imageUri
+)
 
-fun Product.toEntity(): ProductEntity {
-    return ProductEntity(
-        id = id,
-        name = name,
-        quantity = quantity,
-        price = price
-    )
-}
+fun ProductEntity.toProduct() = Product(
+    id = id,
+    name = name,
+    category = category,
+    quantity = quantity,
+    price = price,
+    imageUri = imageUri
+)
+

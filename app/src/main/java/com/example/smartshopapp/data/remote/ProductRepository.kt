@@ -9,18 +9,35 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.net.Uri
+import com.google.firebase.storage.FirebaseStorage
+
 import kotlinx.coroutines.tasks.await
 
 class ProductRepository(context: Context) {
 
     private val db = FirebaseFirestore.getInstance()
     private val productsRef = db.collection("products")
+    private val storage = FirebaseStorage.getInstance()
+    private val imagesRef = storage.reference.child("product_images")
 
     // ROOM LOCAL DB
     private val localDb = AppDatabase.getInstance(context)
     private val dao = localDb.productDao()
 
     private val ioScope = CoroutineScope(Dispatchers.IO)
+
+    // ------------------------------
+    // UPLOAD IMAGE
+    // ------------------------------
+    suspend fun uploadProductImage(
+        productId: String,
+        imageUri: Uri
+    ): String {
+        val imageRef = imagesRef.child("$productId.jpg")
+        imageRef.putFile(imageUri).await()
+        return imageRef.downloadUrl.await().toString()
+    }
 
     // ------------------------------
     // GET PRODUCTS (LOCAL FIRST)

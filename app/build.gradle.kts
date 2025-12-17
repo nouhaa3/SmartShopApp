@@ -51,7 +51,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     // Firebase BOM (controls all versions)
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
-
+    implementation("io.coil-kt:coil-compose:2.6.0")
     // Firebase services (NO VERSIONS HERE)
     implementation("com.google.firebase:firebase-analytics-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")

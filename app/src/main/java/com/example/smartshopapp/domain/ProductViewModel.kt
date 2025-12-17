@@ -7,6 +7,8 @@ import com.example.smartshopapp.data.remote.ProductRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import android.net.Uri
+
 
 class ProductViewModel(
     private val repo: ProductRepository
@@ -24,32 +26,29 @@ class ProductViewModel(
     // ----------------------------
     fun addProduct(
         name: String,
+        category: String,
         quantity: Int,
         price: Double,
+        imageUri: String?,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        val validationError = validateProductFields(name, quantity, price)
-        if (validationError != null) {
-            onError(validationError)
-            return
-        }
-
         viewModelScope.launch {
             try {
                 val product = Product(
-                    id = System.currentTimeMillis().toString(), // simple unique ID
+                    id = System.currentTimeMillis().toString(),
                     name = name,
+                    category = category,
                     quantity = quantity,
-                    price = price
+                    price = price,
+                    imageUri = imageUri
                 )
 
-                repo.addProduct(product) // returns Unit → no check needed
-
+                repo.addProduct(product)
                 onSuccess()
 
             } catch (e: Exception) {
-                onError(e.message ?: "Erreur inconnue lors de l'ajout.")
+                onError(e.message ?: "Error adding product")
             }
         }
     }
@@ -74,7 +73,7 @@ class ProductViewModel(
                 onSuccess()
 
             } catch (e: Exception) {
-                onError(e.message ?: "Erreur inconnue lors de la mise à jour.")
+                onError(e.message ?: "Error occurred when updating the product.")
             }
         }
     }
@@ -93,9 +92,9 @@ class ProductViewModel(
     // VALIDATION
     // ----------------------------
     private fun validateProductFields(name: String, quantity: Int, price: Double): String? {
-        if (name.isBlank()) return "Le nom du produit ne peut pas être vide."
-        if (quantity < 0) return "La quantité doit être ≥ 0."
-        if (price <= 0) return "Le prix doit être > 0."
+        if (name.isBlank()) return "Product name can not be empty."
+        if (quantity < 0) return "Quantity should be ≥ 0."
+        if (price <= 0) return "Price should be > 0."
         return null
     }
 }

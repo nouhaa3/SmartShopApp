@@ -1,11 +1,31 @@
 package com.example.smartshopapp.ui.products
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.smartshopapp.domain.ProductViewModel
+import com.example.smartshopapp.ui.theme.OldRose
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -15,119 +35,146 @@ fun AddProductScreen(
     onBack: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
     var quantityText by remember { mutableStateOf("") }
     var priceText by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    var nameError by remember { mutableStateOf<String?>(null) }
-    var quantityError by remember { mutableStateOf<String?>(null) }
-    var priceError by remember { mutableStateOf<String?>(null) }
+    val categories = listOf("Rings", "Necklaces", "Bracelets", "Earrings", "Watches")
+    var expanded by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Helper to validate UI fields; returns true if OK
-    fun validateUI(): Boolean {
-        var ok = true
-
-        nameError = if (name.isBlank()) { ok = false; "Nom requis" } else null
-
-        val q = quantityText.toIntOrNull()
-        quantityError = when {
-            quantityText.isBlank() -> { ok = false; "Quantité requise" }
-            q == null -> { ok = false; "Quantité invalide" }
-            q < 0 -> { ok = false; "Quantité >= 0 requise" }
-            else -> null
-        }
-
-        val p = priceText.toDoubleOrNull()
-        priceError = when {
-            priceText.isBlank() -> { ok = false; "Prix requis" }
-            p == null -> { ok = false; "Prix invalide" }
-            p <= 0.0 -> { ok = false; "Prix > 0 requis" }
-            else -> null
-        }
-
-        return ok
-    }
+    val imagePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> imageUri = uri }
 
     Scaffold(
+        containerColor = OldRose,
         topBar = {
-            TopAppBar(title = { Text("Add Product") })
+            TopAppBar(
+                title = { Text("Add Jewellery", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = OldRose)
+            )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(
+
+        Box(
             modifier = Modifier
                 .padding(padding)
-                .padding(20.dp)
-                .fillMaxWidth()
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-
-            OutlinedTextField(
-                value = name,
-                onValueChange = {
-                    name = it
-                    if (nameError != null) nameError = null
-                },
-                label = { Text("Product Name") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = nameError != null
-            )
-            if (nameError != null) Text(nameError!!, color = MaterialTheme.colorScheme.error)
-
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = quantityText,
-                onValueChange = {
-                    quantityText = it.filter { ch -> ch.isDigit() } // allow digits only
-                    if (quantityError != null) quantityError = null
-                },
-                label = { Text("Quantity") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = quantityError != null
-            )
-            if (quantityError != null) Text(quantityError!!, color = MaterialTheme.colorScheme.error)
-
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = priceText,
-                onValueChange = {
-                    // allow digits and decimal separator
-                    priceText = it.filter { ch -> ch.isDigit() || ch == '.' || ch == ',' }.replace(',', '.')
-                    if (priceError != null) priceError = null
-                },
-                label = { Text("Price (DT)") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = priceError != null
-            )
-            if (priceError != null) Text(priceError!!, color = MaterialTheme.colorScheme.error)
-
-            Spacer(Modifier.height(20.dp))
-
-            val saveEnabled = name.isNotBlank() && quantityText.isNotBlank() && priceText.isNotBlank()
-
-            Button(
-                onClick = {
-                    if (!validateUI()) return@Button
-
-                    val q = quantityText.toInt()
-                    val p = priceText.toDouble()
-
-                    // ViewModel-level validation + network call
-                    viewModel.addProduct(name, q, p,
-                        onSuccess = { onBack() },
-                        onError = { msg ->
-                            scope.launch { snackbarHostState.showSnackbar(msg) }
-                        }
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = saveEnabled
+            Card(
+                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier.padding(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                Text("Save Product")
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val context = LocalContext.current
+
+                    Box(
+                        modifier = Modifier
+                            .size(110.dp)
+                            .background(OldRose.copy(alpha = 0.15f), CircleShape)
+                            .clickable { imagePicker.launch("image/*") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (imageUri != null) {
+                            val bitmap = remember(imageUri) {
+                                context.contentResolver.openInputStream(imageUri!!)?.use {
+                                    BitmapFactory.decodeStream(it)
+                                }
+                            }
+
+                            bitmap?.let {
+                                Image(
+                                    bitmap = it.asImageBitmap(),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        } else {
+                            Icon(
+                                Icons.Default.AddAPhoto,
+                                contentDescription = "Add Image",
+                                tint = OldRose,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+
+                    OutlinedTextField(name, { name = it }, label = { Text("Name") })
+                    Spacer(Modifier.height(12.dp))
+
+                    ExposedDropdownMenuBox(expanded, { expanded = !expanded }) {
+                        OutlinedTextField(
+                            value = category,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Category") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded)
+                            },
+                            modifier = Modifier.menuAnchor()
+                        )
+                        ExposedDropdownMenu(expanded, { expanded = false }) {
+                            categories.forEach {
+                                DropdownMenuItem(
+                                    text = { Text(it) },
+                                    onClick = {
+                                        category = it
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(quantityText, { quantityText = it.filter(Char::isDigit) }, label = { Text("Quantity") })
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(priceText, { priceText = it }, label = { Text("Price") })
+
+                    Spacer(Modifier.height(24.dp))
+
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = OldRose),
+                        onClick = {
+                            viewModel.addProduct(
+                                name = name,
+                                category = category,
+                                quantity = quantityText.toInt(),
+                                price = priceText.toDouble(),
+                                imageUri = imageUri?.toString(),
+                                onSuccess = onBack,
+                                onError = {
+                                    scope.launch { snackbarHostState.showSnackbar(it) }
+                                }
+                            )
+                        }
+                    ) {
+                        Text("Save Product", color = Color.White)
+                    }
+                }
             }
         }
     }
 }
+
