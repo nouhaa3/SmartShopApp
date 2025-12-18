@@ -1,8 +1,10 @@
 package com.example.smartshopapp.ui.products
 
 import android.net.Uri
+import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,17 +17,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import android.graphics.BitmapFactory
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.smartshopapp.domain.ProductViewModel
 import com.example.smartshopapp.ui.theme.OldRose
+import com.example.smartshopapp.ui.utils.copyImageToInternalStorage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +38,8 @@ fun AddProductScreen(
     var category by remember { mutableStateOf("") }
     var quantityText by remember { mutableStateOf("") }
     var priceText by remember { mutableStateOf("") }
+
+    // SINGLE imageUri
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
     val categories = listOf("Rings", "Necklaces", "Bracelets", "Earrings", "Watches")
@@ -45,10 +47,13 @@ fun AddProductScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val imagePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
-    ) { uri -> imageUri = uri }
+    ) { uri ->
+        imageUri = uri
+    }
 
     Scaffold(
         containerColor = OldRose,
@@ -81,8 +86,8 @@ fun AddProductScreen(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val context = LocalContext.current
 
+                    /* IMAGE PICKER */
                     Box(
                         modifier = Modifier
                             .size(110.dp)
@@ -147,25 +152,38 @@ fun AddProductScreen(
                     }
 
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(quantityText, { quantityText = it.filter(Char::isDigit) }, label = { Text("Quantity") })
+                    OutlinedTextField(
+                        quantityText,
+                        { quantityText = it.filter(Char::isDigit) },
+                        label = { Text("Quantity") }
+                    )
+
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(priceText, { priceText = it }, label = { Text("Price") })
+                    OutlinedTextField(
+                        priceText,
+                        { priceText = it },
+                        label = { Text("Price") }
+                    )
 
                     Spacer(Modifier.height(24.dp))
 
                     Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = OldRose),
                         onClick = {
+                            val imagePath = imageUri?.let {
+                                copyImageToInternalStorage(context, it)
+                            }
+
                             viewModel.addProduct(
                                 name = name,
                                 category = category,
                                 quantity = quantityText.toInt(),
                                 price = priceText.toDouble(),
-                                imageUri = imageUri?.toString(),
+                                imagePath = imagePath, // FILE PATH
                                 onSuccess = onBack,
                                 onError = {
-                                    scope.launch { snackbarHostState.showSnackbar(it) }
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(it)
+                                    }
                                 }
                             )
                         }
@@ -177,4 +195,3 @@ fun AddProductScreen(
         }
     }
 }
-

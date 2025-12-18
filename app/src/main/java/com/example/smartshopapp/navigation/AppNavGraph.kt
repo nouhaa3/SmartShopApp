@@ -1,6 +1,7 @@
 package com.example.smartshopapp.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
@@ -19,6 +20,7 @@ import com.example.smartshopapp.ui.onboarding.OnboardingScreen
 import com.example.smartshopapp.ui.onboarding.WelcomeScreen
 import com.example.smartshopapp.ui.products.AddProductScreen
 import com.example.smartshopapp.ui.products.EditProductScreen
+import com.example.smartshopapp.ui.products.ProductDetailsScreen
 import com.example.smartshopapp.ui.products.ProductListScreen
 import com.example.smartshopapp.ui.stats.StatisticsScreen
 import com.google.firebase.auth.FirebaseAuth
@@ -109,7 +111,6 @@ fun AppNavGraph() {
             )
         }
 
-
         // ================== HOME ==================
         composable("home") {
             HomeScreen(
@@ -137,7 +138,7 @@ fun AppNavGraph() {
                 viewModel = listVM,
                 onAddProduct = { navController.navigate("add_product") },
                 onEditProduct = { product ->
-                    navController.navigate("edit_product/${product.id}")
+                    navController.navigate("product_details/${product.id}")
                 },
                 onBack = { navController.popBackStack() }
             )
@@ -149,6 +150,34 @@ fun AppNavGraph() {
                 viewModel = productVM,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        // ================== PRODUCT DETAILS ==================
+        composable(
+            route = "product_details/{productId}",
+            arguments = listOf(navArgument("productId") {
+                type = NavType.StringType
+            })
+        ) { entry ->
+
+            val productId = entry.arguments?.getString("productId") ?: ""
+
+            val productsState = listVM.products.collectAsState()
+            val product = productsState.value.find { it.id == productId }
+
+            product?.let {
+                ProductDetailsScreen(
+                    product = it,
+                    onBack = { navController.popBackStack() },
+                    onEdit = {
+                        navController.navigate("edit_product/${it.id}")
+                    },
+                    onDelete = {
+                        listVM.deleteProduct(it.id)
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
 
         // ================== EDIT PRODUCT ==================

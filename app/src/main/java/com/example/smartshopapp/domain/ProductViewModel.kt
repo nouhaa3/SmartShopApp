@@ -29,7 +29,7 @@ class ProductViewModel(
         category: String,
         quantity: Int,
         price: Double,
-        imageUri: String?,
+        imagePath: String?,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -41,7 +41,7 @@ class ProductViewModel(
                     category = category,
                     quantity = quantity,
                     price = price,
-                    imageUri = imageUri
+                    imagePath = imagePath
                 )
 
                 repo.addProduct(product)

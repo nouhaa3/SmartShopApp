@@ -8,8 +8,9 @@ fun Product.toEntity() = ProductEntity(
     category = category,
     quantity = quantity,
     price = price,
-    imageUri = imageUri
+    imageUri = imagePath
 )
+
 
 fun ProductEntity.toProduct() = Product(
     id = id,
@@ -17,6 +18,6 @@ fun ProductEntity.toProduct() = Product(
     category = category,
     quantity = quantity,
     price = price,
-    imageUri = imageUri
+    imagePath = imageUri
 )
 
