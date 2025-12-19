@@ -6,14 +6,16 @@ import androidx.room.RoomDatabase
 import android.content.Context
 
 @Database(
-    entities = [ProductEntity::class],
+    entities = [ProductEntity::class,
+                UserProfileEntity::class
+    ],
     version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun productDao(): ProductDao
-
+    abstract fun userDao(): UserDao
     companion object {
 
         @Volatile private var INSTANCE: AppDatabase? = null

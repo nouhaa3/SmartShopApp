@@ -26,7 +26,7 @@ class ProductListViewModel(
     }
 
     /** -------------------------------
-     * 🔥 REAL-TIME LISTENER
+     * REAL-TIME LISTENER
      * Automatically updates product list on:
      * - Add
      * - Edit
@@ -44,7 +44,7 @@ class ProductListViewModel(
     }
 
     /** -------------------------------
-     * 🔥 DELETE PRODUCT
+     * DELETE PRODUCT
      * After deleting, Firestore listener updates the list automatically
     -------------------------------- */
     fun deleteProduct(id: String) {

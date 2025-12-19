@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.smartshopapp.R
 import com.example.smartshopapp.ui.theme.OldRose
+import com.example.smartshopapp.ui.theme.SpaceIndigo
 
 @Composable
 fun WelcomeScreen(
@@ -47,7 +48,7 @@ fun WelcomeScreen(
                 text = "Welcome to\nBella Rose Jewellery",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF3B2F3A),
+                color = SpaceIndigo,
                 textAlign = TextAlign.Center,
                 lineHeight = 22.sp
             )

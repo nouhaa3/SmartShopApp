@@ -24,6 +24,12 @@ import com.example.smartshopapp.ui.products.ProductDetailsScreen
 import com.example.smartshopapp.ui.products.ProductListScreen
 import com.example.smartshopapp.ui.stats.StatisticsScreen
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.runtime.LaunchedEffect
+import com.example.smartshopapp.ui.profile.ProfileScreen
+import com.example.smartshopapp.domain.UserViewModel
+import com.example.smartshopapp.data.remote.UserRepository
+import com.example.smartshopapp.domain.UserViewModelFactory
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun AppNavGraph() {
@@ -37,6 +43,11 @@ fun AppNavGraph() {
 
     // ------------------ DATA ------------------
     val repository = remember { ProductRepository(context) }
+
+    LaunchedEffect(Unit) {
+        repository.startRealtimeSync()
+    }
+
 
     // ------------------ VIEWMODELS ------------------
     val listVM = remember { ProductListViewModel(repository) }
@@ -201,6 +212,31 @@ fun AppNavGraph() {
                 repository = repository,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        // ================== PROFILE ==================
+        composable(route = "profile") {
+
+            val context = LocalContext.current
+            val firebaseUser = FirebaseAuth.getInstance().currentUser
+
+            if (firebaseUser != null) {
+
+                val userViewModel: UserViewModel = viewModel(
+                    factory = UserViewModelFactory(context)
+                )
+
+                ProfileScreen(
+                    uid = firebaseUser.uid,
+                    userViewModel = userViewModel,
+                    onLogout = {
+                        FirebaseAuth.getInstance().signOut()
+                        navController.navigate("login") {
+                            popUpTo("home") { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
     }
 }

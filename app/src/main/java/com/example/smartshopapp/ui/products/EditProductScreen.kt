@@ -41,7 +41,7 @@ fun EditProductScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var product by remember { mutableStateOf<Product?>(null) }
+    val product by viewModel.product.collectAsState()
 
     var name by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
@@ -59,9 +59,11 @@ fun EditProductScreen(
     ) { uri -> newImageUri = uri }
 
     LaunchedEffect(productId) {
-        val loaded = viewModel.getProductById(productId)
-        product = loaded
-        loaded?.let {
+        viewModel.loadProduct(productId)
+    }
+
+    LaunchedEffect(product) {
+        product?.let {
             name = it.name
             category = it.category
             quantityText = it.quantity.toString()
