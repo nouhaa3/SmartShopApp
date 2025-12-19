@@ -17,9 +17,27 @@ class UserViewModel(
 
     fun loadUser(uid: String) {
         viewModelScope.launch {
+            // SYNC FIRST
+            repo.syncUser(uid)
+
+            // THEN READ LOCAL
             _user.value = repo.getUser(uid)
         }
     }
+
+    fun updateUser(
+        user: UserProfile,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                repo.saveUser(user)
+                _user.value = user
+                onSuccess()
+            } catch (e: Exception) {
+                onError(e.message ?: "Update failed")
+            }
+        }
+    }
 }
-
-

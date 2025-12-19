@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.smartshopapp.data.remote.ProductRepository
 import com.example.smartshopapp.ui.theme.OldRose
+import com.example.smartshopapp.ui.theme.SpaceIndigo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,7 +78,8 @@ fun StatisticsScreen(
                 ) {
                     Text(
                         "Stock Distribution",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        color = SpaceIndigo
                     )
 
                     BarChart(

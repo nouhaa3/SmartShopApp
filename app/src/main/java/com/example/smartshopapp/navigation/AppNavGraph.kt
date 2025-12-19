@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import com.example.smartshopapp.ui.profile.ProfileScreen
 import com.example.smartshopapp.domain.UserViewModel
 import com.example.smartshopapp.data.remote.UserRepository
+import com.example.smartshopapp.ui.profile.EditProfileScreen
 import com.example.smartshopapp.domain.UserViewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -215,28 +216,49 @@ fun AppNavGraph() {
         }
 
         // ================== PROFILE ==================
-        composable(route = "profile") {
+            // VIEW
+            composable("profile") {
+                val firebaseUser = FirebaseAuth.getInstance().currentUser
+                val context = LocalContext.current
 
-            val context = LocalContext.current
-            val firebaseUser = FirebaseAuth.getInstance().currentUser
+                if (firebaseUser != null) {
+                    val userVM: UserViewModel = viewModel(
+                        factory = UserViewModelFactory(context)
+                    )
 
-            if (firebaseUser != null) {
-
-                val userViewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(context)
-                )
-
-                ProfileScreen(
-                    uid = firebaseUser.uid,
-                    userViewModel = userViewModel,
-                    onLogout = {
-                        FirebaseAuth.getInstance().signOut()
-                        navController.navigate("login") {
-                            popUpTo("home") { inclusive = true }
-                        }
-                    }
-                )
+                    ProfileScreen(
+                        uid = firebaseUser.uid,
+                        userViewModel = userVM,
+                        onEdit = {
+                            navController.navigate("edit_profile")
+                        },
+                        onLogout = {
+                            FirebaseAuth.getInstance().signOut()
+                            navController.navigate("login") {
+                                popUpTo("home") { inclusive = true }
+                            }
+                        },
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
-        }
+
+            // EDIT
+            composable("edit_profile") {
+                val firebaseUser = FirebaseAuth.getInstance().currentUser
+                val context = LocalContext.current
+
+                if (firebaseUser != null) {
+                    val userVM: UserViewModel = viewModel(
+                        factory = UserViewModelFactory(context)
+                    )
+
+                    EditProfileScreen(
+                        uid = firebaseUser.uid,
+                        userViewModel = userVM,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+            }
     }
 }

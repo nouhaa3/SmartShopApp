@@ -74,7 +74,7 @@ fun ProductDetailsScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No Image", color = Color.White)
+                        Text("There is no image", color = Color.White)
                     }
                 }
 
@@ -119,7 +119,6 @@ fun ProductDetailsScreen(
                     onClick = onEdit,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                 ) {
-                    Icon(Icons.Default.Edit, null, tint = OldRose)
                     Spacer(Modifier.width(8.dp))
                     Text("Edit", color = OldRose)
                 }
@@ -129,7 +128,6 @@ fun ProductDetailsScreen(
                     onClick = onDelete,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                 ) {
-                    Icon(Icons.Default.Delete, null, tint = OldRose)
                     Spacer(Modifier.width(8.dp))
                     Text("Delete", color = OldRose)
                 }

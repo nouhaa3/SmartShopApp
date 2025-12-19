@@ -12,6 +12,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.smartshopapp.ui.onboarding.components.GlowingImageContainer
 import com.example.smartshopapp.ui.theme.OldRose
+import com.example.smartshopapp.ui.theme.SpaceIndigo
 
 @Composable
 fun OnboardingItem(
@@ -37,7 +38,7 @@ fun OnboardingItem(
             text = page.title,
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
-            color = Color(0xFF3B2F3A)
+            color = SpaceIndigo
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -46,7 +47,7 @@ fun OnboardingItem(
             text = page.description,
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
-            color = Color(0xFF5A4A55)
+            color = SpaceIndigo
         )
     }
 }

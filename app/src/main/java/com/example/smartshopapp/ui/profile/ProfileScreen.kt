@@ -1,30 +1,38 @@
 package com.example.smartshopapp.ui.profile
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.example.smartshopapp.domain.UserViewModel
 import com.example.smartshopapp.ui.theme.OldRose
-import com.google.firebase.auth.FirebaseAuth
+import com.example.smartshopapp.ui.theme.SpaceIndigo
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     uid: String,
     userViewModel: UserViewModel,
-    onLogout: () -> Unit
+    onEdit: () -> Unit,
+    onLogout: () -> Unit,
+    onBack: () -> Unit
 ) {
-    val userProfile by userViewModel.user.collectAsState()
+    val user by userViewModel.user.collectAsState()
 
     LaunchedEffect(uid) {
         userViewModel.loadUser(uid)
@@ -35,12 +43,17 @@ fun ProfileScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Profile", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = OldRose)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = OldRose),
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
+                    }
+                }
             )
         }
     ) { padding ->
 
-        if (userProfile == null) {
+        if (user == null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -52,58 +65,101 @@ fun ProfileScreen(
             return@Scaffold
         }
 
-        val user = userProfile!!
-
-        Column(
+        Box(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(padding),
+            contentAlignment = Alignment.Center
         ) {
-
-            // IMAGE
-            Box(
+            Card(
                 modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
+                    .padding(24.dp)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                Icon(
-                    Icons.Default.AccountCircle,
-                    contentDescription = null,
-                    tint = OldRose,
-                    modifier = Modifier.size(100.dp)
-                )
-            }
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
 
-            Spacer(Modifier.height(20.dp))
+                    /* ---------- PROFILE IMAGE ---------- */
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(OldRose.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!user!!.imagePath.isNullOrEmpty()) {
+                            Image(
+                                painter = rememberAsyncImagePainter(
+                                    File(user!!.imagePath!!)
+                                ),
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.AccountCircle,
+                                contentDescription = null,
+                                tint = OldRose,
+                                modifier = Modifier.size(100.dp)
+                            )
+                        }
+                    }
 
-            Text(
-                text = user.fullName,
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White
-            )
+                    Spacer(Modifier.height(20.dp))
 
-            Spacer(Modifier.height(8.dp))
+                    /* ---------- USER DATA ---------- */
+                    Text(
+                        text = user!!.fullName,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = SpaceIndigo
+                    )
 
-            Text(
-                text = user.email,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.9f)
-            )
+                    Spacer(Modifier.height(10.dp))
 
-            Spacer(Modifier.height(40.dp))
+                    Text(
+                        text = user!!.email,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SpaceIndigo
+                    )
 
-            Button(
-                onClick = onLogout,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.ExitToApp, null, tint = OldRose)
-                Spacer(Modifier.width(8.dp))
-                Text("Logout", color = OldRose)
+                    Spacer(Modifier.height(10.dp))
+
+                    Text(
+                        text = user!!.phone,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SpaceIndigo
+                    )
+
+                    Spacer(Modifier.height(30.dp))
+
+                    /* ---------- EDIT BUTTON ---------- */
+                    Button(
+                        onClick = onEdit,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = OldRose)
+                    ) {
+                        Spacer(Modifier.width(8.dp))
+                        Text("Edit Profile", color = Color.White)
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    /* ---------- LOGOUT BUTTON ---------- */
+                    Button(
+                        onClick = onLogout,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = OldRose.copy(alpha = 0.85f)
+                        )
+                    ) {
+                        Text("Logout", color = Color.White)
+                    }
+                }
             }
         }
     }
