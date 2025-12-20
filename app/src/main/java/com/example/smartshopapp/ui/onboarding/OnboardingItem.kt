@@ -1,17 +1,21 @@
 package com.example.smartshopapp.ui.onboarding
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.smartshopapp.ui.onboarding.components.GlowingImageContainer
-import com.example.smartshopapp.ui.theme.OldRose
+import androidx.compose.ui.unit.sp
 import com.example.smartshopapp.ui.theme.SpaceIndigo
 
 @Composable
@@ -21,33 +25,46 @@ fun OnboardingItem(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(OldRose) // FULL background OldRose
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
 
-        GlowingImageContainer(
-            imageRes = page.image,
-            backgroundColor = OldRose.copy(alpha = 0.35f) // FIXED
-        )
+        // Image Section
+        page.image?.let { imageRes ->
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = page.title,
+                modifier = Modifier.size(280.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(56.dp))
 
+        // Title
         Text(
             text = page.title,
-            style = MaterialTheme.typography.headlineMedium,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center,
-            color = SpaceIndigo
+            color = Color.White,
+            letterSpacing = 0.5.sp,
+            lineHeight = 34.sp
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
+        // Description
         Text(
             text = page.description,
-            style = MaterialTheme.typography.bodyLarge,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center,
-            color = SpaceIndigo
+            color = Color.White.copy(alpha = 0.85f),
+            letterSpacing = 0.3.sp,
+            lineHeight = 24.sp,
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
     }
 }

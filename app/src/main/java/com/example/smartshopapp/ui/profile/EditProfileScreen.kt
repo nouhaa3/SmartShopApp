@@ -7,22 +7,35 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.smartshopapp.domain.UserViewModel
 import com.example.smartshopapp.ui.theme.OldRose
+import com.example.smartshopapp.ui.theme.SpaceIndigo
 import com.example.smartshopapp.ui.utils.copyImageToInternalStorage
 import java.io.File
 
@@ -59,108 +72,313 @@ fun EditProfileScreen(
         }
     }
 
-    Scaffold(
-        containerColor = OldRose,
-        topBar = {
-            TopAppBar(
-                title = { Text("Edit Profile", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = OldRose)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        OldRose,
+                        OldRose.copy(alpha = 0.95f)
+                    )
+                )
             )
-        }
-    ) { padding ->
-
-        if (user == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color.White)
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "Edit Profile",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            letterSpacing = 0.5.sp
+                        )
+                    },
+                    navigationIcon = {
+                        Surface(
+                            onClick = onBack,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .size(44.dp),
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.25f)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    Icons.Default.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    ),
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
-            return@Scaffold
-        }
+        ) { padding ->
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.Center
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            if (user == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
                 ) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+                return@Scaffold
+            }
 
-                    Box(
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+            ) {
+
+                Spacer(Modifier.height(16.dp))
+
+                /* ---------- IMAGE PICKER SECTION ---------- */
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White,
                         modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .background(OldRose.copy(alpha = 0.15f))
-                            .clickable { imagePicker.launch("image/*") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when {
-                            newImageUri != null ->
-                                Image(
-                                    painter = rememberAsyncImagePainter(newImageUri),
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-
-                            imagePath != null ->
-                                Image(
-                                    painter = rememberAsyncImagePainter(File(imagePath!!)),
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-
-                            else ->
-                                Icon(Icons.Default.AddAPhoto, null, tint = OldRose)
-                        }
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-
-                    OutlinedTextField(fullName, { fullName = it }, label = { Text("Full name") })
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(email, { email = it }, label = { Text("Email") })
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(phone, { phone = it }, label = { Text("Phone") })
-
-                    Spacer(Modifier.height(24.dp))
-
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = OldRose),
-                        onClick = {
-                            val finalImage = newImageUri?.let {
-                                copyImageToInternalStorage(context, it)
-                            } ?: imagePath
-
-                            userViewModel.updateUser(
-                                user!!.copy(
-                                    fullName = fullName,
-                                    email = email,
-                                    phone = phone,
-                                    imagePath = finalImage
-                                ),
-                                onSuccess = onBack,
-                                onError = {}
+                            .size(140.dp)
+                            .shadow(
+                                elevation = 12.dp,
+                                shape = CircleShape,
+                                ambientColor = Color.Black.copy(alpha = 0.15f)
                             )
-                        }
+                            .clickable { imagePicker.launch("image/*") }
                     ) {
-                        Text("Save")
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            when {
+                                newImageUri != null -> {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(newImageUri),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                                imagePath != null -> {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(File(imagePath!!)),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                                else -> {
+                                    Icon(
+                                        Icons.Default.AccountCircle,
+                                        contentDescription = null,
+                                        tint = OldRose.copy(alpha = 0.3f),
+                                        modifier = Modifier.size(100.dp)
+                                    )
+                                }
+                            }
+
+                            // Overlay icon when image exists
+                            if (newImageUri != null || imagePath != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(
+                                                    Color.Transparent,
+                                                    Color.Black.copy(alpha = 0.3f)
+                                                )
+                                            ),
+                                            CircleShape
+                                        )
+                                )
+                            }
+                        }
                     }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        "Tap to change photo",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        letterSpacing = 0.2.sp
+                    )
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                /* ---------- FORM FIELDS ---------- */
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Text(
+                            "Personal Information",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SpaceIndigo,
+                            letterSpacing = 0.3.sp
+                        )
+
+                        Spacer(Modifier.height(20.dp))
+
+                        // Full Name
+                        OutlinedTextField(
+                            value = fullName,
+                            onValueChange = { fullName = it },
+                            label = { Text("Full Name") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = SpaceIndigo.copy(alpha = 0.6f)
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = OldRose,
+                                focusedLabelColor = OldRose,
+                                focusedLeadingIconColor = OldRose,
+                                cursorColor = OldRose,
+                                focusedTextColor = SpaceIndigo,
+                                unfocusedTextColor = SpaceIndigo
+                            ),
+                            singleLine = true
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        // Email
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Email,
+                                    contentDescription = null,
+                                    tint = SpaceIndigo.copy(alpha = 0.6f)
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = OldRose,
+                                focusedLabelColor = OldRose,
+                                focusedLeadingIconColor = OldRose,
+                                cursorColor = OldRose,
+                                focusedTextColor = SpaceIndigo,
+                                unfocusedTextColor = SpaceIndigo
+                            ),
+                            singleLine = true
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        // Phone
+                        OutlinedTextField(
+                            value = phone,
+                            onValueChange = { phone = it },
+                            label = { Text("Phone") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Phone,
+                                    contentDescription = null,
+                                    tint = SpaceIndigo.copy(alpha = 0.6f)
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = OldRose,
+                                focusedLabelColor = OldRose,
+                                focusedLeadingIconColor = OldRose,
+                                cursorColor = OldRose,
+                                focusedTextColor = SpaceIndigo,
+                                unfocusedTextColor = SpaceIndigo
+                            ),
+                            singleLine = true
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                /* ---------- SAVE BUTTON ---------- */
+                Button(
+                    onClick = {
+                        val finalImage = newImageUri?.let {
+                            copyImageToInternalStorage(context, it)
+                        } ?: imagePath
+
+                        userViewModel.updateUser(
+                            user!!.copy(
+                                fullName = fullName,
+                                email = email,
+                                phone = phone,
+                                imagePath = finalImage
+                            ),
+                            onSuccess = onBack,
+                            onError = {}
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .shadow(
+                            elevation = 8.dp,
+                            shape = RoundedCornerShape(28.dp),
+                            ambientColor = Color.Black.copy(alpha = 0.1f)
+                        ),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = OldRose
+                    )
+                ) {
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "Save Changes",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
                 }
             }
         }

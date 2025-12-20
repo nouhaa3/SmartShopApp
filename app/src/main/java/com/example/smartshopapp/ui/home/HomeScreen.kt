@@ -3,21 +3,28 @@ package com.example.smartshopapp.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.smartshopapp.ui.theme.OldRose
+import com.example.smartshopapp.ui.theme.SpaceIndigo
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,89 +53,132 @@ fun HomeScreen(
             )
         }
     ) {
-        Scaffold(
-            containerColor = OldRose,
-            topBar = {
-                TopAppBar(
-                    title = {},
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            scope.launch { drawerState.open() }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Menu",
-                                tint = Color.White
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = OldRose
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            OldRose,
+                            OldRose.copy(alpha = 0.95f)
+                        )
                     )
                 )
-            }
-        ) { padding ->
+        ) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                topBar = {
+                    TopAppBar(
+                        title = {},
+                        navigationIcon = {
+                            Surface(
+                                onClick = {
+                                    scope.launch { drawerState.open() }
+                                },
+                                modifier = Modifier
+                                    .padding(start = 16.dp)
+                                    .size(44.dp),
+                                shape = CircleShape,
+                                color = Color.White.copy(alpha = 0.25f)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Menu,
+                                        contentDescription = "Menu",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            ) { padding ->
 
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
 
-                Spacer(modifier = Modifier.height(36.dp))
+                    Spacer(modifier = Modifier.height(40.dp))
 
-                // WELCOME TEXT
-                Text(
-                    text = "Welcome to Bella Rose",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
-                )
+                    // WELCOME TEXT
+                    Text(
+                        text = "Bella Rose",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        fontSize = 36.sp,
+                        letterSpacing = 1.sp
+                    )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text = "Where elegance meets beauty",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.9f),
-                    textAlign = TextAlign.Center
-                )
+                    Text(
+                        text = "Where elegance meets beauty",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.9f),
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.5.sp
+                    )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = "Manage your store with grace",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center
-                )
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.White.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = "Manage your store with grace",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.85f),
+                            textAlign = TextAlign.Center,
+                            fontSize = 14.sp,
+                            letterSpacing = 0.3.sp,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                        )
+                    }
 
+                    Spacer(modifier = Modifier.weight(1f))
 
-                Spacer(modifier = Modifier.height(100.dp))
+                    // ACTION CARDS
+                    HomeActionCard(
+                        icon = Icons.Outlined.Inventory2,
+                        title = "Manage Products",
+                        subtitle = "Add, update & organize your jewellery",
+                        onClick = onProductsClick
+                    )
 
-                // ACTION CARDS (CENTERED)
-                HomeActionCard(
-                    title = "Manage Products",
-                    subtitle = "Add, update & organize your jewellery",
-                    onClick = onProductsClick
-                )
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    HomeActionCard(
+                        icon = Icons.Outlined.BarChart,
+                        title = "Statistics",
+                        subtitle = "Track sales & performance",
+                        onClick = onStatsClick
+                    )
 
-                HomeActionCard(
-                    title = "Statistics",
-                    subtitle = "Track sales & performance",
-                    onClick = onStatsClick
-                )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
         }
     }
 }
 
-/* ---------------- DRAWER ---------------- */
+/* ---------------- ELEGANT DRAWER ---------------- */
 
 @Composable
 private fun DrawerContent(
@@ -138,46 +188,66 @@ private fun DrawerContent(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .width(280.dp)
+            .width(300.dp)
             .background(Color.White)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 28.dp)
     ) {
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(60.dp))
 
-        // BRAND TITLE
-        Text(
-            text = "Bella Rose ✨",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = OldRose
-        )
+        // BRAND SECTION
+        Column(
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = "Bella Rose",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = OldRose,
+                fontSize = 28.sp,
+                letterSpacing = 0.5.sp
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-        Text(
-            text = "Jewellery Store",
-            style = MaterialTheme.typography.bodyMedium,
-            color = OldRose.copy(alpha = 0.6f)
+            Text(
+                text = "Jewellery Store",
+                style = MaterialTheme.typography.bodyLarge,
+                color = SpaceIndigo.copy(alpha = 0.6f),
+                fontWeight = FontWeight.Medium,
+                fontSize = 15.sp,
+                letterSpacing = 0.3.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Divider(
+            color = OldRose.copy(alpha = 0.12f),
+            thickness = 1.dp
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Divider(
-            color = OldRose.copy(alpha = 0.15f),
-            thickness = 1.dp
+        // MENU SECTION
+        Text(
+            text = "MENU",
+            style = MaterialTheme.typography.labelSmall,
+            color = SpaceIndigo.copy(alpha = 0.4f),
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            letterSpacing = 1.5.sp
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // MENU SECTION
         DrawerItem(
             icon = Icons.Outlined.Person,
             text = "Profile",
             onClick = onProfileClick
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         DrawerItem(
             icon = Icons.Outlined.Logout,
@@ -189,19 +259,38 @@ private fun DrawerContent(
 
         // FOOTER
         Divider(
-            color = OldRose.copy(alpha = 0.1f),
+            color = OldRose.copy(alpha = 0.08f),
             thickness = 1.dp
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        Text(
-            text = "Crafted with love 💗",
-            style = MaterialTheme.typography.bodySmall,
-            color = OldRose.copy(alpha = 0.5f)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Crafted with",
+                style = MaterialTheme.typography.bodySmall,
+                color = SpaceIndigo.copy(alpha = 0.4f),
+                fontSize = 13.sp
+            )
+            Text(
+                text = " ♥ ",
+                style = MaterialTheme.typography.bodySmall,
+                color = OldRose,
+                fontSize = 13.sp
+            )
+            Text(
+                text = "for you",
+                style = MaterialTheme.typography.bodySmall,
+                color = SpaceIndigo.copy(alpha = 0.4f),
+                fontSize = 13.sp
+            )
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(28.dp))
     }
 }
 
@@ -211,66 +300,125 @@ private fun DrawerItem(
     text: String,
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = text,
-            tint = OldRose
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = OldRose.copy(alpha = 0.1f),
+                modifier = Modifier.size(42.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = text,
+                        tint = OldRose,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
 
-        Spacer(modifier = Modifier.width(18.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-            color = Color(0xFF3B2F3A)
-        )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = SpaceIndigo,
+                fontSize = 16.sp,
+                letterSpacing = 0.2.sp
+            )
+        }
     }
 }
 
 
-/* ---------------- BIG HOME CARD ---------------- */
+/* ---------------- PREMIUM HOME CARD ---------------- */
 
 @Composable
 private fun HomeActionCard(
+    icon: ImageVector,
     title: String,
     subtitle: String,
     onClick: () -> Unit
 ) {
-    Card(
+    Surface(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
-            .clickable { onClick() },
+            .height(140.dp)
+            .shadow(
+                elevation = 12.dp,
+                shape = RoundedCornerShape(28.dp),
+                ambientColor = Color.Black.copy(alpha = 0.1f)
+            ),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        color = Color.White,
+        tonalElevation = 2.dp
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center
+                .padding(28.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = OldRose
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
+            // Icon Circle
+            Surface(
+                shape = CircleShape,
+                color = OldRose.copy(alpha = 0.12f),
+                modifier = Modifier.size(64.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = title,
+                        tint = OldRose,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(20.dp))
+
+            // Text Content
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = SpaceIndigo,
+                    fontSize = 20.sp,
+                    letterSpacing = 0.3.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = SpaceIndigo.copy(alpha = 0.6f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 0.2.sp,
+                    lineHeight = 20.sp
+                )
+            }
         }
     }
 }
