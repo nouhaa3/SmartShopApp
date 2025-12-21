@@ -7,6 +7,7 @@ import android.content.Context
 
 @Database(
     entities = [ProductEntity::class,
+                CategoryEntity::class,
                 UserProfileEntity::class
     ],
     version = 2,
@@ -16,6 +17,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun productDao(): ProductDao
     abstract fun userDao(): UserDao
+    abstract fun categoryDao(): CategoryDao
     companion object {
 
         @Volatile private var INSTANCE: AppDatabase? = null

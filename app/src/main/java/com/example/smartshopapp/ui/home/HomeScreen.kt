@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Person
@@ -31,6 +32,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     onProductsClick: () -> Unit,
+    onCategoriesClick: () -> Unit,
     onStatsClick: () -> Unit,
     onProfileClick: () -> Unit,
     onLogout: () -> Unit
@@ -160,6 +162,15 @@ fun HomeScreen(
                         title = "Manage Products",
                         subtitle = "Add, update & organize your jewellery",
                         onClick = onProductsClick
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    HomeActionCard(
+                        icon = Icons.Outlined.Category,
+                        title = "Manage Categories",
+                        subtitle = "Organize your product categories",
+                        onClick = onCategoriesClick
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))

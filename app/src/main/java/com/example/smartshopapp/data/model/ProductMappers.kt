@@ -8,9 +8,10 @@ fun Product.toEntity() = ProductEntity(
     category = category,
     quantity = quantity,
     price = price,
-    imageUri = imagePath
+    imageUri = imagePath,
+    isAvailable = isAvailable,
+    lowStockThreshold = lowStockThreshold
 )
-
 
 fun ProductEntity.toProduct() = Product(
     id = id,
@@ -18,6 +19,7 @@ fun ProductEntity.toProduct() = Product(
     category = category,
     quantity = quantity,
     price = price,
-    imagePath = imageUri
+    imagePath = imageUri,
+    isAvailable = isAvailable,
+    lowStockThreshold = lowStockThreshold
 )
-

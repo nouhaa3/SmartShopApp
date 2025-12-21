@@ -30,7 +30,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartshopapp.domain.CategoryViewModel
+import com.example.smartshopapp.domain.CategoryViewModelFactory
 import com.example.smartshopapp.domain.ProductViewModel
+import com.example.smartshopapp.ui.components.CategoryDropdown
 import com.example.smartshopapp.ui.theme.OldRose
 import com.example.smartshopapp.ui.theme.SpaceIndigo
 import com.example.smartshopapp.ui.utils.copyImageToInternalStorage
@@ -48,12 +52,14 @@ fun AddProductScreen(
     var priceText by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    val categories = listOf("Rings", "Necklaces", "Bracelets", "Earrings", "Watches")
-    var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val categoryVM: CategoryViewModel = viewModel(factory = CategoryViewModelFactory(context))
+    val categories by categoryVM.categories.collectAsState()
+    val categoryNames = categories.filter { it.isActive }.map { it.name }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
 
     val imagePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -256,57 +262,12 @@ fun AddProductScreen(
                         Spacer(Modifier.height(16.dp))
 
                         // Category Dropdown
-                        ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = !expanded }
-                        ) {
-                            OutlinedTextField(
-                                value = category,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Category") },
-                                trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded)
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor(),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = OldRose,
-                                    focusedLabelColor = OldRose,
-                                    cursorColor = OldRose,
-                                    focusedTextColor = SpaceIndigo,
-                                    unfocusedTextColor = SpaceIndigo
-                                )
-                            )
-                            ExposedDropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false },
-                                modifier = Modifier.background(Color.White)
-                            ) {
-                                categories.forEach { cat ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                cat,
-                                                color = SpaceIndigo,
-                                                fontWeight = if (cat == category) FontWeight.Bold else FontWeight.Normal
-                                            )
-                                        },
-                                        onClick = {
-                                            category = cat
-                                            expanded = false
-                                        },
-                                        modifier = Modifier.background(
-                                            if (cat == category)
-                                                OldRose.copy(alpha = 0.08f)
-                                            else Color.Transparent
-                                        )
-                                    )
-                                }
-                            }
-                        }
+                        CategoryDropdown(
+                            value = category,
+                            categories = categoryNames,
+                            onValueChange = { category = it },
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
                         Spacer(Modifier.height(16.dp))
 

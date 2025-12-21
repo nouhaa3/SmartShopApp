@@ -1,9 +1,11 @@
 package com.example.smartshopapp.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,9 +14,15 @@ import androidx.navigation.navArgument
 import com.example.smartshopapp.auth.AuthViewModel
 import com.example.smartshopapp.auth.LoginScreen
 import com.example.smartshopapp.auth.RegisterScreen
+import com.example.smartshopapp.data.remote.CategoryRepository
 import com.example.smartshopapp.data.remote.ProductRepository
+import com.example.smartshopapp.domain.CategoryViewModel
+import com.example.smartshopapp.domain.CategoryViewModelFactory
 import com.example.smartshopapp.domain.ProductListViewModel
 import com.example.smartshopapp.domain.ProductViewModel
+import com.example.smartshopapp.domain.UserViewModel
+import com.example.smartshopapp.domain.UserViewModelFactory
+import com.example.smartshopapp.ui.categories.CategoryManagementScreen
 import com.example.smartshopapp.ui.home.HomeScreen
 import com.example.smartshopapp.ui.onboarding.OnboardingScreen
 import com.example.smartshopapp.ui.onboarding.WelcomeScreen
@@ -22,14 +30,10 @@ import com.example.smartshopapp.ui.products.AddProductScreen
 import com.example.smartshopapp.ui.products.EditProductScreen
 import com.example.smartshopapp.ui.products.ProductDetailsScreen
 import com.example.smartshopapp.ui.products.ProductListScreen
+import com.example.smartshopapp.ui.profile.EditProfileScreen
+import com.example.smartshopapp.ui.profile.ProfileScreen
 import com.example.smartshopapp.ui.stats.StatisticsScreen
 import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.runtime.LaunchedEffect
-import com.example.smartshopapp.ui.profile.ProfileScreen
-import com.example.smartshopapp.domain.UserViewModel
-import com.example.smartshopapp.ui.profile.EditProfileScreen
-import com.example.smartshopapp.domain.UserViewModelFactory
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun AppNavGraph() {
@@ -37,32 +41,28 @@ fun AppNavGraph() {
     val navController = rememberNavController()
     val context = LocalContext.current
 
-    // ------------------ AUTH ------------------
     val authVM = remember { AuthViewModel() }
     val firebaseAuth = FirebaseAuth.getInstance()
 
-    // ------------------ DATA ------------------
-    val repository = remember { ProductRepository(context) }
+    val productRepository = remember { ProductRepository(context) }
+    val categoryRepository = remember { CategoryRepository(context) }
 
     LaunchedEffect(Unit) {
-        repository.startRealtimeSync()
+        productRepository.startRealtimeSync()
+        categoryRepository.startRealtimeSync()
     }
 
-    // ------------------ VIEWMODELS ------------------
-    val listVM = remember { ProductListViewModel(repository) }
-    val productVM = remember { ProductViewModel(repository) }
+    val listVM = remember { ProductListViewModel(productRepository) }
+    val productVM = remember { ProductViewModel(productRepository) }
 
-    // ------------------ START DESTINATION ------------------
     val startDestination =
         if (firebaseAuth.currentUser != null) "home" else "welcome"
 
-    // ------------------ NAV HOST ------------------
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
 
-        // ================== WELCOME ==================
         composable("welcome") {
             WelcomeScreen(
                 onStart = {
@@ -73,7 +73,6 @@ fun AppNavGraph() {
             )
         }
 
-        // ================== ONBOARDING ==================
         composable("onboarding") {
             OnboardingScreen(
                 onFinish = {
@@ -89,7 +88,6 @@ fun AppNavGraph() {
             )
         }
 
-        // ================== LOGIN ==================
         composable("login") {
             LoginScreen(
                 viewModel = authVM,
@@ -104,7 +102,6 @@ fun AppNavGraph() {
             )
         }
 
-        // ================== REGISTER ==================
         composable("register") {
             RegisterScreen(
                 viewModel = authVM,
@@ -121,11 +118,13 @@ fun AppNavGraph() {
             )
         }
 
-        // ================== HOME ==================
         composable("home") {
             HomeScreen(
                 onProductsClick = {
                     navController.navigate("product_list")
+                },
+                onCategoriesClick = {
+                    navController.navigate("categories")
                 },
                 onStatsClick = {
                     navController.navigate("statistics")
@@ -142,7 +141,17 @@ fun AppNavGraph() {
             )
         }
 
-        // ================== PRODUCT LIST ==================
+        composable("categories") {
+            val categoryVM: CategoryViewModel = viewModel(
+                factory = CategoryViewModelFactory(context)
+            )
+
+            CategoryManagementScreen(
+                viewModel = categoryVM,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable("product_list") {
             ProductListScreen(
                 viewModel = listVM,
@@ -154,7 +163,6 @@ fun AppNavGraph() {
             )
         }
 
-        // ================== ADD PRODUCT ==================
         composable("add_product") {
             AddProductScreen(
                 viewModel = productVM,
@@ -162,7 +170,6 @@ fun AppNavGraph() {
             )
         }
 
-        // ================== PRODUCT DETAILS ==================
         composable(
             route = "product_details/{productId}",
             arguments = listOf(navArgument("productId") {
@@ -183,16 +190,13 @@ fun AppNavGraph() {
                         navController.navigate("edit_product/${it.id}")
                     },
                     onDelete = {
-                        // Supprime le produit avec l'objet Product complet
                         listVM.deleteProduct(it)
-                        // Retour à la liste des produits
                         navController.popBackStack()
                     }
                 )
             }
         }
 
-        // ================== EDIT PRODUCT ==================
         composable(
             route = "edit_product/{productId}",
             arguments = listOf(navArgument("productId") {
@@ -207,23 +211,20 @@ fun AppNavGraph() {
             )
         }
 
-        // ================== STATISTICS ==================
         composable("statistics") {
             StatisticsScreen(
-                repository = repository,
+                repository = productRepository,
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // ================== PROFILE ==================
-        // VIEW PROFILE
         composable("profile") {
             val firebaseUser = FirebaseAuth.getInstance().currentUser
-            val context = LocalContext.current
+            val profileContext = LocalContext.current
 
             if (firebaseUser != null) {
                 val userVM: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(context)
+                    factory = UserViewModelFactory(profileContext)
                 )
 
                 ProfileScreen(
@@ -243,14 +244,13 @@ fun AppNavGraph() {
             }
         }
 
-        // EDIT PROFILE
         composable("edit_profile") {
             val firebaseUser = FirebaseAuth.getInstance().currentUser
-            val context = LocalContext.current
+            val editContext = LocalContext.current
 
             if (firebaseUser != null) {
                 val userVM: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(context)
+                    factory = UserViewModelFactory(editContext)
                 )
 
                 EditProfileScreen(

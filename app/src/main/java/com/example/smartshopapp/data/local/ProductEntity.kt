@@ -10,7 +10,9 @@ data class ProductEntity(
     val category: String,
     val quantity: Int,
     val price: Double,
-    val imageUri: String?
+    val imageUri: String?,
+
+    // NOUVEAUX CHAMPS
+    val isAvailable: Boolean = true,
+    val lowStockThreshold: Int = 5
 )
-
-
