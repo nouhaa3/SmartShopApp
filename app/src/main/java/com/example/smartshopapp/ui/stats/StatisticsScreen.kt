@@ -403,8 +403,8 @@ private suspend fun exportToCSV(
                         outputStream.write(row.toByteArray())
                     }
                 }
-                "✅ CSV saved in Downloads folder"
-            } ?: "❌ Export failed"
+                "CSV saved in Downloads folder"
+            } ?: "Export failed"
         } else {
             // Android 9 et inférieur
             val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
@@ -424,10 +424,10 @@ private suspend fun exportToCSV(
                     fos.write(row.toByteArray())
                 }
             }
-            "✅ CSV saved: ${file.absolutePath}"
+            "CSV saved: ${file.absolutePath}"
         }
     } catch (e: Exception) {
-        "❌ Export failed: ${e.message}"
+        "Export failed: ${e.message}"
     }
 }
 
@@ -518,10 +518,10 @@ private suspend fun exportToPDF(
                     pdfDocument.writeTo(outputStream)
                 }
                 pdfDocument.close()
-                "✅ PDF saved in Downloads folder"
+                "PDF saved in Downloads folder"
             } ?: run {
                 pdfDocument.close()
-                "❌ Export failed"
+                "Export failed"
             }
         } else {
             // Android 9 et inférieur
@@ -533,10 +533,10 @@ private suspend fun exportToPDF(
             val file = File(downloadsDir, fileName)
             pdfDocument.writeTo(FileOutputStream(file))
             pdfDocument.close()
-            "✅ PDF saved: ${file.absolutePath}"
+            "PDF saved: ${file.absolutePath}"
         }
     } catch (e: Exception) {
-        "❌ Export failed: ${e.message}"
+        "Export failed: ${e.message}"
     }
 }
 

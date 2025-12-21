@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,12 +58,8 @@ fun ProductListScreen(
     )
 
     val filteredProducts = products.filter { product ->
-        val matchSearch =
-            product.name.contains(searchQuery, ignoreCase = true)
-
-        val matchCategory =
-            selectedCategory == "All" || product.category == selectedCategory
-
+        val matchSearch = product.name.contains(searchQuery, ignoreCase = true)
+        val matchCategory = selectedCategory == "All" || product.category == selectedCategory
         matchSearch && matchCategory
     }
 
@@ -122,9 +117,8 @@ fun ProductListScreen(
                     ),
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                 )
-            },
-
-            ) { padding ->
+            }
+        ) { padding ->
 
             Column(
                 modifier = Modifier
@@ -286,7 +280,6 @@ fun ProductListScreen(
 }
 
 /* ---------- CATEGORY CHIP COMPONENT ---------- */
-
 @Composable
 private fun CategoryChip(
     text: String,
@@ -315,7 +308,6 @@ private fun CategoryChip(
 }
 
 /* ---------- PREMIUM PRODUCT CARD ---------- */
-
 @Composable
 private fun ProductGridCard(
     product: Product,
@@ -344,13 +336,17 @@ private fun ProductGridCard(
             ) {
                 if (product.imagePath != null) {
                     Image(
-                        painter = rememberAsyncImagePainter(File(product.imagePath)),
+                        painter = rememberAsyncImagePainter(
+                            if (product.imagePath.startsWith("https://"))
+                                product.imagePath
+                            else
+                                File(product.imagePath)
+                        ),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
 
-                    // Subtle bottom gradient for depth
                     Box(
                         modifier = Modifier
                             .fillMaxSize()

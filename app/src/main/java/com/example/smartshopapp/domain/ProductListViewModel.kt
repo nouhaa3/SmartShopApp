@@ -47,9 +47,23 @@ class ProductListViewModel(
      * DELETE PRODUCT
      * After deleting, Firestore listener updates the list automatically
     -------------------------------- */
-    fun deleteProduct(id: String) {
+    fun deleteProduct(product: Product) {
         viewModelScope.launch {
-            repository.deleteProduct(id)
+            try {
+                // 1. Supprimer l'image si elle existe
+                product.imagePath?.let { path ->
+                    repository.deleteProductImage(path)
+                }
+
+                // 2. Supprimer de Firebase/Firestore ET Room local
+                repository.deleteProduct(product.id)
+
+                // Pas besoin de rafraîchir manuellement,
+                // le listener observeProducts() s'en charge automatiquement
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

@@ -10,12 +10,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -37,6 +35,8 @@ fun ProductDetailsScreen(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -100,7 +100,10 @@ fun ProductDetailsScreen(
                     if (product.imagePath != null) {
                         Image(
                             painter = rememberAsyncImagePainter(
-                                model = File(product.imagePath)
+                                model = if (product.imagePath.startsWith("https://"))
+                                    product.imagePath
+                                else
+                                    File(product.imagePath)
                             ),
                             contentDescription = product.name,
                             contentScale = ContentScale.Crop,
@@ -120,21 +123,16 @@ fun ProductDetailsScreen(
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    "No Image Available",
-                                    color = Color.White.copy(alpha = 0.7f),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    letterSpacing = 0.3.sp
-                                )
-                            }
+                            Text(
+                                "No Image Available",
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                letterSpacing = 0.3.sp
+                            )
                         }
                     }
 
-                    // Bottom gradient overlay
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -149,7 +147,6 @@ fun ProductDetailsScreen(
                             )
                     )
 
-                    // Category badge
                     Surface(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -187,7 +184,6 @@ fun ProductDetailsScreen(
                     Column(
                         modifier = Modifier.padding(28.dp)
                     ) {
-                        // Product Name
                         Text(
                             text = product.name,
                             fontSize = 26.sp,
@@ -199,7 +195,6 @@ fun ProductDetailsScreen(
 
                         Spacer(Modifier.height(24.dp))
 
-                        // Divider
                         Divider(
                             color = OldRose.copy(alpha = 0.15f),
                             thickness = 1.dp
@@ -207,10 +202,9 @@ fun ProductDetailsScreen(
 
                         Spacer(Modifier.height(24.dp))
 
-                        // Info Rows
                         InfoRow(
                             label = "Quantity",
-                            value = "${product.quantity} items",
+                            value = "${product.quantity} items"
                         )
 
                         Spacer(Modifier.height(20.dp))
@@ -233,7 +227,6 @@ fun ProductDetailsScreen(
                         .padding(bottom = 28.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Edit Button
                     Surface(
                         onClick = onEdit,
                         modifier = Modifier
@@ -262,9 +255,8 @@ fun ProductDetailsScreen(
                         }
                     }
 
-                    // Delete Button
                     Surface(
-                        onClick = onDelete,
+                        onClick = { showDeleteDialog = true },
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp)
@@ -293,16 +285,24 @@ fun ProductDetailsScreen(
                 }
             }
         }
+
+        if (showDeleteDialog) {
+            DeleteConfirmationDialog(
+                productName = product.name,
+                onDismiss = { showDeleteDialog = false },
+                onConfirm = {
+                    showDeleteDialog = false
+                    onDelete()
+                }
+            )
+        }
     }
 }
-
-/* ---------- INFO ROW COMPONENT ---------- */
 
 @Composable
 private fun InfoRow(
     label: String,
     value: String,
-    icon: String = "",
     highlight: Boolean = false
 ) {
     Row(
@@ -310,24 +310,13 @@ private fun InfoRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (icon.isNotEmpty()) {
-                Text(
-                    text = icon,
-                    fontSize = 20.sp,
-                    modifier = Modifier.padding(end = 12.dp)
-                )
-            }
-            Text(
-                text = label,
-                color = SpaceIndigo.copy(alpha = 0.6f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.3.sp
-            )
-        }
+        Text(
+            text = label,
+            color = SpaceIndigo.copy(alpha = 0.6f),
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 0.3.sp
+        )
 
         Text(
             text = value,
@@ -337,4 +326,99 @@ private fun InfoRow(
             letterSpacing = if (highlight) 0.5.sp else 0.3.sp
         )
     }
+}
+
+@Composable
+private fun DeleteConfirmationDialog(
+    productName: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = OldRose.copy(alpha = 0.15f),
+                modifier = Modifier.size(64.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = OldRose,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
+        },
+        title = {
+            Text(
+                text = "Delete Product?",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                color = SpaceIndigo
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Are you sure you want to delete",
+                    fontSize = 14.sp,
+                    color = SpaceIndigo.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = "\"$productName\"?",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = SpaceIndigo
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "This action cannot be undone.",
+                    fontSize = 12.sp,
+                    color = OldRose,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = OldRose),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp)
+            ) {
+                Text(
+                    text = "Delete",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = SpaceIndigo),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp)
+            ) {
+                Text(
+                    text = "Cancel",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
+            }
+        },
+        shape = RoundedCornerShape(24.dp),
+        containerColor = Color.White,
+        tonalElevation = 8.dp
+    )
 }

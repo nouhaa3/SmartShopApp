@@ -385,12 +385,6 @@ fun AddProductScreen(
                         contentColor = OldRose
                     )
                 ) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(Modifier.width(12.dp))
                     Text(
                         "Save Product",
                         fontSize = 16.sp,

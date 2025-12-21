@@ -13,6 +13,7 @@ import android.net.Uri
 import com.google.firebase.storage.FirebaseStorage
 
 import kotlinx.coroutines.tasks.await
+import java.io.File
 
 class ProductRepository(context: Context) {
 
@@ -46,7 +47,9 @@ class ProductRepository(context: Context) {
         return dao.getAllProducts().map { it.toProduct() }
     }
 
-    // Fonctions pour StatisticsScreen
+    // ------------------------------
+    // FONCTIONS POUR STATS
+    // ------------------------------
     suspend fun getAllProductsOnce(): List<Product> {
         return dao.getAllProducts().map { it.toProduct() }
     }
@@ -78,6 +81,32 @@ class ProductRepository(context: Context) {
     suspend fun deleteProduct(id: String) {
         productsRef.document(id).delete().await()
         dao.deleteById(id)
+    }
+
+    // ------------------------------
+    // DELETE PRODUCT IMAGE
+    // ------------------------------
+    suspend fun deleteProductImage(imagePath: String) {
+        try {
+            // Si c'est une URL Firebase Storage
+            if (imagePath.startsWith("https://")) {
+                try {
+                    val imageRef = storage.getReferenceFromUrl(imagePath)
+                    imageRef.delete().await()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            // Si c'est un fichier local
+            else {
+                val file = File(imagePath)
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     // ------------------------------
