@@ -16,6 +16,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartshopapp.domain.CategoryViewModel
+import com.example.smartshopapp.domain.CategoryViewModelFactory
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +53,10 @@ fun EditProductScreen(
 
     val product by viewModel.product.collectAsState()
 
+    val categoryVM: CategoryViewModel = viewModel(factory = CategoryViewModelFactory(context))
+    val categories by categoryVM.categories.collectAsState()
+    val categoryNames = categories.filter { it.isActive }.map { it.name }
+
     var name by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var quantityText by remember { mutableStateOf("") }
@@ -58,7 +65,6 @@ fun EditProductScreen(
     var imagePath by remember { mutableStateOf<String?>(null) }
     var newImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    val categories = listOf("Rings", "Necklaces", "Bracelets", "Earrings", "Watches")
     var expanded by remember { mutableStateOf(false) }
 
     val imagePicker = rememberLauncherForActivityResult(
@@ -333,7 +339,7 @@ fun EditProductScreen(
                                 onDismissRequest = { expanded = false },
                                 modifier = Modifier.background(Color.White)
                             ) {
-                                categories.forEach { cat ->
+                                categoryNames.forEach { cat ->  // Changed from 'categories' to 'categoryNames'
                                     DropdownMenuItem(
                                         text = {
                                             Text(

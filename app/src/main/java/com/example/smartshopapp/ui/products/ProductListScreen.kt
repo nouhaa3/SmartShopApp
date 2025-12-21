@@ -10,6 +10,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartshopapp.domain.CategoryViewModel
+import com.example.smartshopapp.domain.CategoryViewModelFactory
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -24,6 +27,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,17 +49,17 @@ fun ProductListScreen(
 ) {
     val products by viewModel.products.collectAsState()
 
+    val context = LocalContext.current
+
+    val categoryVM: CategoryViewModel = viewModel(factory = CategoryViewModelFactory(context))
+    val categoriesFromDB by categoryVM.categories.collectAsState()
+
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("All") }
 
-    val categories = listOf(
-        "All",
-        "Rings",
-        "Necklaces",
-        "Bracelets",
-        "Earrings",
-        "Watches"
-    )
+    val categories = remember(categoriesFromDB) {
+        listOf("All") + categoriesFromDB.filter { it.isActive }.map { it.name }
+    }
 
     val filteredProducts = products.filter { product ->
         val matchSearch = product.name.contains(searchQuery, ignoreCase = true)
