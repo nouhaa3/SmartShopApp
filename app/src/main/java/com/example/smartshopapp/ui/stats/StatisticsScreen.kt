@@ -3,8 +3,11 @@ package com.example.smartshopapp.ui.stats
 import android.content.Context
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,17 +15,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.smartshopapp.data.model.Product
 import com.example.smartshopapp.data.remote.ProductRepository
 import com.example.smartshopapp.ui.theme.OldRose
 import com.example.smartshopapp.ui.theme.SpaceIndigo
@@ -40,12 +49,18 @@ fun StatisticsScreen(
     repository: ProductRepository,
     onBack: () -> Unit
 ) {
-    var totalProducts by remember { mutableStateOf(0) }
-    var totalStock by remember { mutableStateOf(0) }
-    var avgPrice by remember { mutableStateOf(0.0) }
-    var highestPrice by remember { mutableStateOf(0.0) }
+    var totalProducts by remember { mutableIntStateOf(0) }
+    var totalStock by remember { mutableIntStateOf(0) }
+    var totalStockValue by remember { mutableDoubleStateOf(0.0) }
+    var avgPrice by remember { mutableDoubleStateOf(0.0) }
+    var highestPrice by remember { mutableDoubleStateOf(0.0) }
+    var lowestPrice by remember { mutableDoubleStateOf(0.0) }
     var maxPriceProduct by remember { mutableStateOf<String?>(null) }
-    var chartData by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
+    var lowStockProducts by remember { mutableStateOf<List<Product>>(emptyList()) }
+    var topProducts by remember { mutableStateOf<List<Product>>(emptyList()) }
+    var categoryDistribution by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var stockByCategory by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
+
     var showExportDialog by remember { mutableStateOf(false) }
     var showSuccessSnackbar by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf("") }
@@ -54,19 +69,35 @@ fun StatisticsScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // LOAD DATA ONCE
+    // LOAD DATA
     LaunchedEffect(Unit) {
         val products = repository.getAllProductsOnce()
 
         totalProducts = products.size
         totalStock = products.sumOf { it.quantity }
+        totalStockValue = products.sumOf { it.price * it.quantity }
         avgPrice = if (products.isNotEmpty()) {
             products.map { it.price }.average()
         } else 0.0
 
         highestPrice = products.maxOfOrNull { it.price } ?: 0.0
+        lowestPrice = products.minOfOrNull { it.price } ?: 0.0
         maxPriceProduct = products.maxByOrNull { it.price }?.name
-        chartData = products.map { it.name to it.quantity }
+
+        // Low stock products (quantity < 5)
+        lowStockProducts = products.filter { it.quantity < 5 }.sortedBy { it.quantity }
+
+        // Top products by stock value
+        topProducts = products.sortedByDescending { it.price * it.quantity }.take(5)
+
+        // Category distribution
+        categoryDistribution = products.groupBy { it.category }
+            .mapValues { it.value.size }
+
+        // Stock by category for chart
+        stockByCategory = products.groupBy { it.category }
+            .map { (category, prods) -> category to prods.sumOf { it.quantity } }
+            .sortedByDescending { it.second }
     }
 
     LaunchedEffect(showSuccessSnackbar) {
@@ -106,14 +137,13 @@ fun StatisticsScreen(
             topBar = {
                 TopAppBar(
                     title = {
-                        Column {
-                            Text(
-                                "Statistics",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 22.sp
-                            )
-                        }
+                        Text(
+                            "Analytics Dashboard",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            letterSpacing = 0.5.sp
+                        )
                     },
                     navigationIcon = {
                         Surface(
@@ -131,7 +161,8 @@ fun StatisticsScreen(
                                 Icon(
                                     Icons.Default.ArrowBack,
                                     contentDescription = "Back",
-                                    tint = Color.White
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         }
@@ -152,14 +183,16 @@ fun StatisticsScreen(
                                 Icon(
                                     Icons.Default.FileDownload,
                                     contentDescription = "Export",
-                                    tint = Color.White
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent
-                    )
+                    ),
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         ) { padding ->
@@ -173,20 +206,29 @@ fun StatisticsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
+                /* ---------- OVERVIEW STATS ---------- */
+                Text(
+                    "Overview",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    letterSpacing = 0.3.sp
+                )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     StatCard(
-                        title = "Products",
+                        title = "Total Products",
                         value = totalProducts.toString(),
-                        icon = "",
+                        subtitle = "In inventory",
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
-                        title = "Stock",
+                        title = "Total Stock",
                         value = totalStock.toString(),
-                        icon = "",
+                        subtitle = "Items available",
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -195,46 +237,114 @@ fun StatisticsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    StatCard(
+                        title = "Stock Value",
+                        value = "%.0f DT".format(totalStockValue),
+                        subtitle = "Total worth",
+                        modifier = Modifier.weight(1f)
+                    )
                     StatCard(
                         title = "Avg Price",
                         value = "%.2f DT".format(avgPrice),
-                        icon = "",
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatCard(
-                        title = "Highest",
-                        value = "%.0f DT".format(highestPrice),
-                        icon = "",
+                        subtitle = "Per product",
                         modifier = Modifier.weight(1f)
                     )
                 }
 
+                /* ---------- PRICE RANGE ---------- */
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
                     shadowElevation = 8.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier.padding(24.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                "Most Expensive",
-                                fontSize = 13.sp,
-                                color = SpaceIndigo.copy(alpha = 0.6f)
+                        Text(
+                            "Price Range",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SpaceIndigo,
+                            letterSpacing = 0.3.sp
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    "Lowest",
+                                    fontSize = 12.sp,
+                                    color = SpaceIndigo.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    "%.2f DT".format(lowestPrice),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = OldRose
+                                )
+                            }
+
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    "Highest",
+                                    fontSize = 12.sp,
+                                    color = SpaceIndigo.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    "%.2f DT".format(highestPrice),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = OldRose
+                                )
+                            }
+                        }
+
+                        maxPriceProduct?.let {
+                            HorizontalDivider(
+                                color = SpaceIndigo.copy(alpha = 0.1f),
+                                modifier = Modifier.padding(vertical = 4.dp)
                             )
-                            Text(
-                                maxPriceProduct ?: "N/A",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = SpaceIndigo
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.TrendingUp,
+                                    contentDescription = null,
+                                    tint = OldRose,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Column {
+                                    Text(
+                                        "Most Expensive",
+                                        fontSize = 11.sp,
+                                        color = SpaceIndigo.copy(alpha = 0.6f)
+                                    )
+                                    Text(
+                                        it,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = SpaceIndigo
+                                    )
+                                }
+                            }
                         }
                     }
                 }
+
+                /* ---------- CATEGORY DISTRIBUTION ---------- */
+                Text(
+                    "Category Analysis",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    letterSpacing = 0.3.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
 
                 Surface(
                     shape = RoundedCornerShape(24.dp),
@@ -243,23 +353,149 @@ fun StatisticsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp)
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            "Stock Distribution",
-                            fontSize = 18.sp,
+                            "Products by Category",
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = SpaceIndigo
                         )
-                        Spacer(Modifier.height(16.dp))
-                        BarChart(
-                            data = chartData,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(220.dp)
-                        )
+
+                        if (categoryDistribution.isNotEmpty()) {
+                            categoryDistribution.forEach { (category, count) ->
+                                CategoryRow(
+                                    category = category,
+                                    count = count,
+                                    total = totalProducts
+                                )
+                            }
+                        } else {
+                            Text(
+                                "No data available",
+                                fontSize = 14.sp,
+                                color = SpaceIndigo.copy(alpha = 0.5f),
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
                     }
                 }
+
+                /* ---------- STOCK BY CATEGORY CHART ---------- */
+                if (stockByCategory.isNotEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color.White,
+                        shadowElevation = 8.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp)
+                        ) {
+                            Text(
+                                "Stock Distribution",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SpaceIndigo,
+                                letterSpacing = 0.3.sp
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            ImprovedBarChart(
+                                data = stockByCategory,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(240.dp)
+                            )
+                        }
+                    }
+                }
+
+                /* ---------- TOP PRODUCTS ---------- */
+                if (topProducts.isNotEmpty()) {
+                    Text(
+                        "Top Products by Value",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = 0.3.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color.White,
+                        shadowElevation = 8.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            topProducts.forEach { product ->
+                                TopProductRow(product = product)
+                                if (product != topProducts.last()) {
+                                    HorizontalDivider(
+                                        color = SpaceIndigo.copy(alpha = 0.1f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                /* ---------- LOW STOCK ALERT ---------- */
+                if (lowStockProducts.isNotEmpty()) {
+                    Text(
+                        "Low Stock Alert",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = 0.3.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color(0xFFFFF3E0),
+                        shadowElevation = 8.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFF9800),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    "Products running low (< 5 items)",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFFE65100)
+                                )
+                            }
+
+                            lowStockProducts.forEach { product ->
+                                LowStockRow(product = product)
+                                if (product != lowStockProducts.last()) {
+                                    HorizontalDivider(
+                                        color = Color(0xFFFF9800).copy(alpha = 0.2f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
             }
         }
 
@@ -290,6 +526,256 @@ fun StatisticsScreen(
     }
 }
 
+/* ---------- STAT CARD ---------- */
+@Composable
+private fun StatCard(
+    title: String,
+    value: String,
+    subtitle: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.height(120.dp),
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 8.dp,
+        color = Color.White
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                title,
+                fontSize = 12.sp,
+                color = SpaceIndigo.copy(alpha = 0.6f),
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.3.sp
+            )
+            Column {
+                Text(
+                    value,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = OldRose,
+                    letterSpacing = 0.3.sp
+                )
+                Text(
+                    subtitle,
+                    fontSize = 11.sp,
+                    color = SpaceIndigo.copy(alpha = 0.5f),
+                    letterSpacing = 0.2.sp
+                )
+            }
+        }
+    }
+}
+
+/* ---------- CATEGORY ROW ---------- */
+@Composable
+private fun CategoryRow(
+    category: String,
+    count: Int,
+    total: Int
+) {
+    val percentage = if (total > 0) (count.toFloat() / total * 100) else 0f
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                category,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = SpaceIndigo
+            )
+            Text(
+                "$count products",
+                fontSize = 12.sp,
+                color = SpaceIndigo.copy(alpha = 0.6f)
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .background(
+                    SpaceIndigo.copy(alpha = 0.1f),
+                    RoundedCornerShape(4.dp)
+                )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(percentage / 100)
+                    .fillMaxHeight()
+                    .background(
+                        OldRose,
+                        RoundedCornerShape(4.dp)
+                    )
+            )
+        }
+    }
+}
+
+/* ---------- TOP PRODUCT ROW ---------- */
+@Composable
+private fun TopProductRow(product: Product) {
+    val stockValue = product.price * product.quantity
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                product.name,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = SpaceIndigo
+            )
+            Text(
+                "${product.quantity} items × ${product.price} DT",
+                fontSize = 11.sp,
+                color = SpaceIndigo.copy(alpha = 0.6f)
+            )
+        }
+        Text(
+            "%.0f DT".format(stockValue),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = OldRose
+        )
+    }
+}
+
+/* ---------- LOW STOCK ROW ---------- */
+@Composable
+private fun LowStockRow(product: Product) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                product.name,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFFE65100)
+            )
+            Text(
+                product.category,
+                fontSize = 11.sp,
+                color = Color(0xFFE65100).copy(alpha = 0.7f)
+            )
+        }
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = Color(0xFFFF9800).copy(alpha = 0.2f)
+        ) {
+            Text(
+                "${product.quantity} left",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFE65100),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            )
+        }
+    }
+}
+
+/* ---------- IMPROVED BAR CHART ---------- */
+@Composable
+fun ImprovedBarChart(
+    data: List<Pair<String, Int>>,
+    modifier: Modifier = Modifier
+) {
+    if (data.isEmpty()) {
+        Box(
+            modifier = modifier,
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "No data available",
+                color = SpaceIndigo.copy(alpha = 0.5f),
+                fontSize = 14.sp
+            )
+        }
+        return
+    }
+
+    val maxValue = data.maxOf { it.second }.coerceAtLeast(1)
+
+    Column(modifier = modifier) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            val barCount = data.size
+            val spacing = 24.dp.toPx()
+            val barWidth = ((size.width - spacing * (barCount + 1)) / barCount).coerceAtLeast(30.dp.toPx())
+
+            data.forEachIndexed { index, (_, value) ->
+                val barHeight = (value / maxValue.toFloat()) * size.height * 0.9f
+
+                val x = spacing + index * (barWidth + spacing)
+                val y = size.height - barHeight
+
+                // Draw bar
+                drawRoundRect(
+                    color = OldRose,
+                    topLeft = Offset(x, y),
+                    size = Size(barWidth, barHeight),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx())
+                )
+
+                // Draw value text on top of bar
+                drawContext.canvas.nativeCanvas.apply {
+                    val paint = android.graphics.Paint().apply {
+                        color = SpaceIndigo.toArgb()
+                        textSize = 11.sp.toPx()
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        isFakeBoldText = true
+                    }
+                    drawText(
+                        value.toString(),
+                        x + barWidth / 2,
+                        y - 8.dp.toPx(),
+                        paint
+                    )
+                }
+            }
+        }
+
+        // Labels
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            data.forEach { (label, _) ->
+                Text(
+                    text = label.take(8),
+                    fontSize = 10.sp,
+                    color = SpaceIndigo.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+/* ---------- EXPORT DIALOG ---------- */
 @Composable
 private fun ExportDialog(
     onDismiss: () -> Unit,
@@ -300,86 +786,86 @@ private fun ExportDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                "Export Products",
+                "Export Report",
                 fontWeight = FontWeight.Bold,
-                color = SpaceIndigo
+                fontSize = 20.sp,
+                color = SpaceIndigo,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
         },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     "Choose export format:",
-                    color = SpaceIndigo.copy(alpha = 0.7f)
+                    color = SpaceIndigo.copy(alpha = 0.7f),
+                    fontSize = 14.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
 
-                ExportOptionButton(
-                    text = "Export as CSV",
-                    description = "Excel compatible format",
-                    onClick = onExportCSV
-                )
+                Spacer(Modifier.height(4.dp))
 
-                ExportOptionButton(
-                    text = "Export as PDF",
-                    description = "Professional document format",
-                    onClick = onExportPDF
-                )
+                Button(
+                    onClick = onExportCSV,
+                    colors = ButtonDefaults.buttonColors(containerColor = OldRose),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    Text(
+                        "Export as CSV",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = onExportPDF,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = OldRose),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                ) {
+                    Text(
+                        "Export as PDF",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                }
             }
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = SpaceIndigo)
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Cancel",
+                    color = SpaceIndigo,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
             }
         },
-        shape = RoundedCornerShape(20.dp),
-        containerColor = Color.White
+        shape = RoundedCornerShape(24.dp),
+        containerColor = Color.White,
+        tonalElevation = 8.dp
     )
 }
 
-@Composable
-private fun ExportOptionButton(
-    text: String,
-    description: String,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = OldRose.copy(alpha = 0.1f),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = text,
-                fontWeight = FontWeight.SemiBold,
-                color = SpaceIndigo,
-                fontSize = 16.sp
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = description,
-                fontSize = 12.sp,
-                color = SpaceIndigo.copy(alpha = 0.6f)
-            )
-        }
-    }
-}
-
-// Export Functions
+// Export Functions remain the same as in your original code
 private suspend fun exportToCSV(
     context: Context,
-    products: List<com.example.smartshopapp.data.model.Product>
+    products: List<Product>
 ): String = withContext(Dispatchers.IO) {
     try {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "SmartShop_Products_$timestamp.csv"
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            // Android 10+ : Utiliser MediaStore
             val values = android.content.ContentValues().apply {
                 put(android.provider.MediaStore.Downloads.DISPLAY_NAME, fileName)
                 put(android.provider.MediaStore.Downloads.MIME_TYPE, "text/csv")
@@ -393,20 +879,16 @@ private suspend fun exportToCSV(
 
             uri?.let {
                 context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                    // Header
                     outputStream.write("Name,Category,Price (DT),Quantity\n".toByteArray())
-
-                    // Data rows
                     products.forEach { product ->
                         val row = "${escapeCsv(product.name)},${escapeCsv(product.category)}," +
                                 "${product.price},${product.quantity}\n"
                         outputStream.write(row.toByteArray())
                     }
                 }
-                "CSV saved in Downloads folder"
+                "CSV saved in Downloads"
             } ?: "Export failed"
         } else {
-            // Android 9 et inférieur
             val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
                 android.os.Environment.DIRECTORY_DOWNLOADS
             )
@@ -414,10 +896,7 @@ private suspend fun exportToCSV(
 
             val file = File(downloadsDir, fileName)
             FileOutputStream(file).use { fos ->
-                // Header
                 fos.write("Name,Category,Price (DT),Quantity\n".toByteArray())
-
-                // Data rows
                 products.forEach { product ->
                     val row = "${escapeCsv(product.name)},${escapeCsv(product.category)}," +
                             "${product.price},${product.quantity}\n"
@@ -433,18 +912,17 @@ private suspend fun exportToCSV(
 
 private suspend fun exportToPDF(
     context: Context,
-    products: List<com.example.smartshopapp.data.model.Product>
+    products: List<Product>
 ): String = withContext(Dispatchers.IO) {
     try {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "SmartShop_Products_$timestamp.pdf"
 
         val pdfDocument = PdfDocument()
-        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 size
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
         var page = pdfDocument.startPage(pageInfo)
         var canvas = page.canvas
 
-        // Styling
         val titlePaint = Paint().apply {
             color = SpaceIndigo.toArgb()
             textSize = 24f
@@ -462,7 +940,6 @@ private suspend fun exportToPDF(
 
         var yPos = 50f
 
-        // Title
         canvas.drawText("Products List", 50f, yPos, titlePaint)
         yPos += 30f
 
@@ -470,18 +947,15 @@ private suspend fun exportToPDF(
             50f, yPos, bodyPaint)
         yPos += 40f
 
-        // Table Header
         canvas.drawText("Name", 50f, yPos, headerPaint)
         canvas.drawText("Category", 200f, yPos, headerPaint)
         canvas.drawText("Price", 350f, yPos, headerPaint)
         canvas.drawText("Stock", 450f, yPos, headerPaint)
         yPos += 20f
 
-        // Draw line
         canvas.drawLine(50f, yPos, 545f, yPos, headerPaint)
         yPos += 15f
 
-        // Data rows
         products.forEach { product ->
             if (yPos > 800) {
                 pdfDocument.finishPage(page)
@@ -499,9 +973,7 @@ private suspend fun exportToPDF(
 
         pdfDocument.finishPage(page)
 
-        // Sauvegarder le PDF
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            // Android 10+ : Utiliser MediaStore
             val values = android.content.ContentValues().apply {
                 put(android.provider.MediaStore.Downloads.DISPLAY_NAME, fileName)
                 put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/pdf")
@@ -518,13 +990,12 @@ private suspend fun exportToPDF(
                     pdfDocument.writeTo(outputStream)
                 }
                 pdfDocument.close()
-                "PDF saved in Downloads folder"
+                "PDF saved in Downloads"
             } ?: run {
                 pdfDocument.close()
                 "Export failed"
             }
         } else {
-            // Android 9 et inférieur
             val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
                 android.os.Environment.DIRECTORY_DOWNLOADS
             )
@@ -545,47 +1016,5 @@ private fun escapeCsv(value: String): String {
         "\"${value.replace("\"", "\"\"")}\""
     } else {
         value
-    }
-}
-
-/* ---------- STAT CARD ---------- */
-
-@Composable
-private fun StatCard(
-    title: String,
-    value: String,
-    icon: String,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.height(110.dp),
-        shape = RoundedCornerShape(20.dp),
-        shadowElevation = 8.dp,
-        color = Color.White
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    title,
-                    fontSize = 13.sp,
-                    color = SpaceIndigo.copy(alpha = 0.6f)
-                )
-                Text(icon, fontSize = 20.sp)
-            }
-            Text(
-                value,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = OldRose
-            )
-        }
     }
 }
